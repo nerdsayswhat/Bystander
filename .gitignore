@@ -77,3 +77,11 @@ crashlytics-build.properties
 # Android/Quest signing keys, never commit
 *.keystore
 *.jks
+
+# Meta SDK local/machine-specific files, never commit
+# (DevAgentSettings holds a personal access token and local network address)
+/Assets/Resources/DevAgentSettings.asset
+/Assets/Resources/DevAgentSettings.asset.meta
+# XR Operator layer binary, copied here by Activate and rebuilt on demand
+/Assets/XR/APILayers~/
+TempAssembly.dll
