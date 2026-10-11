@@ -531,7 +531,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChainWrap
   linkMaterial: {fileID: 0}
-  linkColor: {r: 1, g: 0.55, b: 0.2, a: 1}
+  linkColor: {r: 0.34591186, g: 0.34591186, b: 0.34591186, a: 1}
+  strainColor: {r: 0.67295593, g: 0.67295593, b: 0.67295593, a: 1}
   torsoRadius: 0.2
   torsoHeight: 0.6
   torsoTurns: 3
@@ -540,6 +541,12 @@ MonoBehaviour:
   handLinks: 14
   beltAnchor: {x: 0.28, y: 0.6, z: 0.12}
   sag: 0.06
+  reach: 0.35
+  pullRange: 0.25
+  tremble: 0.0009
+  tremorStart: 0.75
+  bodyBack: 0.08
+  follow: 2
 --- !u!4 &574630718
 Transform:
   m_ObjectHideFlags: 0
