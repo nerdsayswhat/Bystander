@@ -1039,7 +1039,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d28f705476c80d47acb3dfade3d3142, type: 3}
   m_Name: MetaXRFoveationFeature Standalone
   m_EditorClassIdentifier: Oculus.VR::Meta.XR.MetaXRFoveationFeature
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Meta XR Foveation
   version: 1.0.0
   featureIdInternal: com.meta.openxr.feature.foveation
@@ -1272,7 +1272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8f7a7b4a7bf27d4d96b8eb673f5174e, type: 3}
   m_Name: OculusTouchControllerProximityProfile Standalone
   m_EditorClassIdentifier: Oculus.VR::Meta.XR.OculusTouchControllerProximityProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Oculus Touch Controller Proximity Interaction
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.input.oculustouch.proximity
@@ -1388,6 +1388,9 @@ MonoBehaviour:
   - {fileID: 5735698037071399969}
   - {fileID: -4653485384166920533}
   - {fileID: -3254487025647366636}
+  - {fileID: -6476376352742263856}
+  - {fileID: 1351349841845213449}
+  - {fileID: -5018087263810843221}
   - {fileID: -95866015641464844}
   - {fileID: -6770015915918530251}
   - {fileID: -4925979734077453476}
@@ -1396,26 +1399,23 @@ MonoBehaviour:
   - {fileID: -9149305453920179575}
   - {fileID: 7482374188395526006}
   - {fileID: 8921530049663799371}
+  - {fileID: 5142833375478425499}
   - {fileID: 3625717677407217842}
   - {fileID: 7391277274360819604}
+  - {fileID: 2421610338078423100}
+  - {fileID: 9185790575892468164}
+  - {fileID: 3458312679131512937}
+  - {fileID: 933482819819730111}
   - {fileID: 5048154418666476057}
   - {fileID: -1548605059986545103}
   - {fileID: -1639258545157158287}
   - {fileID: 4031687883875719833}
+  - {fileID: 5780914441819067422}
   - {fileID: -3504885556976122452}
   - {fileID: 782581141872358778}
   - {fileID: 7744924914244771413}
   - {fileID: -249198115343663884}
-  - {fileID: 5142833375478425499}
   - {fileID: 7735411343537459925}
-  - {fileID: -5018087263810843221}
-  - {fileID: 5780914441819067422}
-  - {fileID: 933482819819730111}
-  - {fileID: 3458312679131512937}
-  - {fileID: 1351349841845213449}
-  - {fileID: -6476376352742263856}
-  - {fileID: 9185790575892468164}
-  - {fileID: 2421610338078423100}
   customLoaderName: 
   m_renderMode: 1
   m_latencyOptimization: 0
@@ -1604,7 +1604,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1927c045052a06d49a9b21fdcaa26db6, type: 3}
   m_Name: MetaXRFeature Standalone
   m_EditorClassIdentifier: Oculus.VR::Meta.XR.MetaXRFeature
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Meta XR Feature
   version: 0.0.1
   featureIdInternal: com.meta.openxr.feature.metaxr

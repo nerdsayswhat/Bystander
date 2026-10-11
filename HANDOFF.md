@@ -51,12 +51,13 @@ public class GazeTarget : MonoBehaviour
 Still needed: a fallback if the player never looks (sound repeats louder, target flickers, then the scene moves on after a few seconds).
 
 ## Project state (2026-10-11)
-- Pushed on `Test`. Scene `Test_Scene` is still empty (camera, light, volume).
+- On `Test`. `Test_Scene` now has the Meta Camera Rig, the Comprehensive Interaction Rig (hands) and one grabbable cube at about `0, 1.0, 0.45` (Unity world, forward is +Z). Hand grab verified working with real hands over Quest Link on 2026-10-11.
 - Packages: Meta XR All-in-One SDK 207.0.0, OpenXR 1.18.0. XR Hands 1.7.3 is present only as a dependency of the Meta SDK. XR Interaction Toolkit was removed.
 - Git LFS tracks models, textures, audio and video. `.gitignore` excludes keystores, `Assets/Resources/DevAgentSettings.asset` (holds a personal token and LAN address), `Assets/XR/APILayers~/` and `TempAssembly.dll`.
 - Known harmless noise: three NullReferenceExceptions at editor startup from Unity's OpenXR feature refresh. They don't affect Play mode or the XR Operator. Decided to leave them alone.
-- Next for the author in Unity: add the OVRCameraRig and Hand Tracking Building Blocks, set hand tracking to **Hands Only** on OVRManager (this also adds the Android hand-tracking permission), and accept the Project Setup Tool fixes.
-- Next for Claude: GazeTarget and a test scene, the chain-break logic, particle hands on the hand bones, the scene sequencer, then test with the XR Operator.
+- Done in Unity: Camera Rig, Hand Tracking and Hand Grab blocks added, hand tracking set to Hands Only (saved in `OculusProjectConfig`), Meta XR OpenXR feature group enabled.
+- Next for Claude: chain-break logic (reach for an object before the cards breaks the chains), particle hands on the hand bones, the scene sequencer, then GazeTarget. Test with the XR Operator in a fresh session.
+- Pending small things: set Scene Support and Anchor Support to Disabled on OVRManager (currently Required and Supported, the app loads room data it does not need); verify the Android Meta XR feature is saved; do a first Android build and check the manifest has the hand-tracking entries.
 
 ## Testing with the XR Operator
 Tools appear as `mcp__metavr__xr_openxr_*`, in sessions started after the registration. Unity must be in Play mode with the Meta XR Simulator active (otherwise Play mode fails with `XR_ERROR_FORM_FACTOR_UNAVAILABLE`). `metavr` is registered at local scope through `.claude/metavr-proxy.mjs`, a stopgap for a protocol mismatch between metavr 1.8 and Claude Code 2.1.292. To undo: `claude mcp remove metavr -s local`, then `metavr mcp install claude-code --execute -y`. The Unity console can be read through `Editor.log` (`%LOCALAPPDATA%\Unity\Editor\Editor.log`). The `unity` CLI bridge cannot reach the editor because the Pipeline package is not installed.
@@ -70,3 +71,17 @@ The Claude desktop app redirects writes under `%APPDATA%` into its own private f
 - Scene 6 only punishes inaction with litter and a scared woman. Idea: reuse the cards at the end and finish Stephen's and Julia's sentences if the player helped.
 - The woman "gets up" in scene 5, but is never shown down in scene 2.
 - Scene 5 says "pick up" the ball, scene 6 says "distract" the dog. Is the ball thrown or just held?
+
+## Hard-won findings (2026-10-11)
+- **The fix that made everything work: enable the "Meta XR" feature group** in Project Settings, XR Plug-in Management, OpenXR, on both the PC (Windows) tab and the Android tab. Without it Meta's OVRManager never initializes (`OVRManager.OVRManagerinitialized` stays false), the OVRCameraRig stays frozen, and no hands or controllers reach the app. Symptoms were a head-locked grey image, no hands, input "None". Unity's own XR input still tracked the head, which is how it was diagnosed. Meta's SDK shows a one-time "Enable Meta XR Feature Set" dialog that is easy to miss.
+- **Testing over Quest Link or the simulator:** the Game view must be the focused window while testing. Typing in the Claude app steals focus. Workaround: the author presses Alt+Tab once after putting the headset on (or clicks the Game view), then Claude reads the log. Claude cannot see the headset under Link (capture and set-pose tools are removed there), so Unity's log is the window.
+- **Reading Unity's output:** `%LOCALAPPDATA%\Unity\Editor\Editor.log`. Debug.Log lines appear there. `GrabLogger.cs` (Assets/Scripts) logs grab and release only; delete it when no longer wanted.
+- **XR Operator caveats:** its MCP connection drops when the app session changes (for example after switching between the simulator and Link); only a new Claude session reconnects it. It needs Play mode with the Meta XR Simulator active. A skybox-only view looks identical for any yaw, so "identical screenshots" proved nothing; put a visible object in view when testing.
+- **Cube placement:** the original building-block cube sat at the origin, which is under the player's feet (floor-level tracking origin). A cube at head height at the origin ends up inside the player's face.
+- **Untracked files not to commit:** `Assets/#Meta/` (machine and per-run session IDs, should be added to `.gitignore`), plus the earlier ignored list in the notes above.
+- **The three startup NullReferenceExceptions** from Unity's OpenXR feature refresh are still there and still harmless. A cleanup attempt of stale XR Hands entries did not fix them and was reverted.
+
+## Starting a fresh session
+1. Commit and push the current work first (GitHub Desktop, branch `Test`, leave `Assets/#Meta` unticked).
+2. New session in `C:\Ashwin\Unity\Bystander`. Memory notes and this file load automatically.
+3. For XR Operator work: open Unity, switch the Meta XR Simulator on, press Play, click the Game view, then ask Claude to check the operator tools.
