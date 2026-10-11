@@ -85,3 +85,7 @@ crashlytics-build.properties
 # XR Operator layer binary, copied here by Activate and rebuilt on demand
 /Assets/XR/APILayers~/
 TempAssembly.dll
+
+# Meta SDK per-machine IDs (project guid and a session id that changes every run)
+/Assets/#Meta/
+/Assets/#Meta.meta
