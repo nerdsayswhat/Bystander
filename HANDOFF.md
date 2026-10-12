@@ -67,18 +67,38 @@ Still needed: a fallback if the player never looks (sound repeats louder, target
 - **Trello board "Bystander"** (https://trello.com/b/FzvAEN3U/bystander) has To Do, Doing and Done lists mirroring this file. Workflow: ask before creating a card for new work, then keep Doing updated.
 - **Standing instruction:** update this file after every major step.
 
+## Review 2026-10-11 (script vs build vs Trello, for a November start)
+- **Break rule conflict:** the doc has the objects at the player's feet, and the chain reach is 0.35 m from a belt anchor about 1 m above the floor, so a hand can never get "near" an object. Trigger the break from strain plus a closed hand held for about 1 s, not from proximity. Decide how that picks "an object" (any strain plus grab is simplest).
+- **Chain material on Android: fixed 2026-10-11 (untested).** `Assets/Materials/ChainLink.mat` (URP Unlit, grey) is assigned to `ChainWrap.linkMaterial` in `Test_Scene`, so the shader ships in builds. The script now sets the URP `_BaseColor` through the property block (the old `_Color` is ignored by URP Unlit) and its fallback uses `Universal Render Pipeline/Unlit`. Check that Unity imports the material without errors.
+- **Not on Trello yet:** the film's content. Scenes 2 to 6 assets (orange, can, ball, bin as simple shapes; particle people, dog, baby, stroller, bicycle), the cards scene and portraits, spatial audio, the darkness-lift lighting, scene 5 pick-up and hand-over triggers, the acted/not-acted state for scene 6, the ending line (the doc has an open comment about it), a Quest 3 performance budget for the street scenes, and mocap planning. Nothing has a due date.
+- **"You cannot do anything but look at it"** in the doc is for the author only, not shown to the player. Ignore it. There is no voice-over.
+- **Schedule (set 2026-10-11):** submission deadline 26 Nov; the whole app should be finished by the second week of November (card due 13 Nov) so thesis work can start. Every Trello card has a due date, working back from that: Android build 14 Oct, mocap decision 15 Oct, chain break 16 Oct, story decisions 17 Oct, sequencer 18 Oct, gaze and portraits 20 Oct, photosensitivity 22 Oct, scene 1 on 23 Oct, particle people 25 Oct, scene 2 on 28 Oct, cards scene 30 Oct, scene 5 on 2 Nov, audio 4 Nov, mocap 5 Nov, street scene 3 on 6 Nov, scene 6 on 9 Nov, performance 11 Nov, playthrough 13 Nov, submission upload 24 Nov (two-day buffer).
+- **Pace:** the hard mechanic (chains, strain, hand hold, no locomotion) is done in 5 days, but nothing has been built or run on the headset itself (all testing was over Link). The two street scenes and the mocap clips are the long pole; the darkness scenes (1, 2, 4, 5) are cheap and make a good first slice.
+
+## Thesis (state on 2026-10-12)
+- **Where it is:** Claude Doc "Bystander: Thesis (rough draft)": https://claude.ai/code/artifact/5fa69431-52fd-4fa4-97b6-9f0969ac19d3. Edit that doc, never recreate it. A Word copy is exported to `Bystander_Thesis.docx` in the project root (git-ignored; 12 pt, 1.5 spacing, page numbers, A4). Re-export after any change. Method: the docs `export` tool (docx, a4) saves its base64 result to a file; decode it, then patch the zip: 1.5 line spacing (`w:line="360"`) on every paragraph, 12 pt (`sz 24`) in table cells and in the Normal style (reuse `styles.xml` and `footer1.xml` from the previous docx), a PAGE-number footer, A4 page size. Last re-exported 2026-10-12 from doc rev 404.
+- **Structure:** Abstract, acknowledgements, lists, 1 Introduction, 2 State of the art, 3 Experience, 4 Creative process, 5 Technical choices (kept shallow on purpose), 6 Critical discussion, 7 Conclusions, numbered references, AI Declaration (the author's own text). Two tables (scenes, versions) and Figure 1 (scene flow diagram). About 6,200 words of main text without tables; the brief is 6,000 to 8,000, excluding appendices and bibliography. Appendices and the UX studies section were removed.
+- **Rules the author set:** write in the style of their own reports (Birthday, Design Immersive Experience, Critical Practice and Exploration, Project Report), never the lit review's style. No bracketed notes or questions in the doc. Only references from the author's own documents (25, numbered; in-text citations are numbered [n]); do not add references, sources or co-authors without asking. Never mention audience testing, user testing or participant studies. Placeholders allowed: `[DOI link]` is mostly filled by the author already.
+- **Story history** (author's Downloads folder): `FMP Pitch_Bystander.pdf`, `Proposal.pdf` (May 2026), `BYSTANDER_Revised_2026.docx` (June 2026, the Cylinder), the Google Doc "Bystander" (current script). The lit review is a fact source only, and some of its quotes and dates did not check out.
+- **State of the claims:** gaze targets, the break rule and the scene sequencer are not built, and section 5.2 says so. Update it when they exist. The thesis frames viewer effects as intentions, not results.
+- **Open for the author:** the AI Declaration only mentions code, while the report text was drafted with AI help, so it needs to say so and follow UAL's rules. The state of the art has no XR, media or performance art section. Check the facts and DOIs of references written from memory. The critical arguments in 2.2, 2.3, 2.4, 6.1 and 6.3 were drafted by Claude, so the author must agree with them. Headset captures for figures are still to add.
+- A recurring risk: a reviewer's AI-pattern audit flagged repeated central claims, "not X but Y" contrasts, tidy closing sentences and a theory-to-feature rhythm. Do not chase detector scores; fix substance.
+
 ## Testing with the XR Operator
 Tools appear as `mcp__metavr__xr_openxr_*`, in sessions started after the registration. Unity must be in Play mode with the Meta XR Simulator active (otherwise Play mode fails with `XR_ERROR_FORM_FACTOR_UNAVAILABLE`). `metavr` is registered at local scope through `.claude/metavr-proxy.mjs`, a stopgap for a protocol mismatch between metavr 1.8 and Claude Code 2.1.292. To undo: `claude mcp remove metavr -s local`, then `metavr mcp install claude-code --execute -y`. The Unity console can be read through `Editor.log` (`%LOCALAPPDATA%\Unity\Editor\Editor.log`). The `unity` CLI bridge cannot reach the editor because the Pipeline package is not installed.
 
 ## Gotcha
 The Claude desktop app redirects writes under `%APPDATA%` into its own private folder, so tools installed there from inside the app are invisible to Unity. Install such things from a normal terminal.
 
-## Open story questions
-- What does the old man do when handed the orange? Not a second thank-you; the woman already thanks the player. Idea: he walks off toward the hospital.
-- The can has no card. Write one, or make the gap deliberate.
-- Scene 6 only punishes inaction with litter and a scared woman. Idea: reuse the cards at the end and finish Stephen's and Julia's sentences if the player helped.
-- The woman "gets up" in scene 5, but is never shown down in scene 2.
-- Scene 5 says "pick up" the ball, scene 6 says "distract" the dog. Is the ball thrown or just held?
+## Story questions, answered 2026-10-12
+- The old man takes the orange and walks back into the darkness (tentative, not important).
+- The can has no card. Not important.
+- Scene 6 keeps showing consequences for inaction on purpose. The first drafts wanted inaction to cause no visible harm, but the author wants to show that inaction has consequences too. Reusing the cards at the end (finishing Stephen's and Julia's sentences) is only an idea; the thesis lists it as future work.
+- The woman is not shown down in scene 2.
+- The ball is picked up, not thrown (for now).
+- Running time: about 15 minutes at most.
+- The people are faceless because they are strangers to the player. The darkness shows our own blindness to everything around us.
+- The Cylinder ending was dropped: it was too vague and gave no context or build-up. Its infinite principle became the expanding crowd (the people in the street who go on as far as the player can see, and the cards that keep appearing without end).
 
 ## Hard-won findings (2026-10-11)
 - **The fix that made everything work: enable the "Meta XR" feature group** in Project Settings, XR Plug-in Management, OpenXR, on both the PC (Windows) tab and the Android tab. Without it Meta's OVRManager never initializes (`OVRManager.OVRManagerinitialized` stays false), the OVRCameraRig stays frozen, and no hands or controllers reach the app. Symptoms were a head-locked grey image, no hands, input "None". Unity's own XR input still tracked the head, which is how it was diagnosed. Meta's SDK shows a one-time "Enable Meta XR Feature Set" dialog that is easy to miss.

@@ -89,3 +89,6 @@ TempAssembly.dll
 # Meta SDK per-machine IDs (project guid and a session id that changes every run)
 /Assets/#Meta/
 /Assets/#Meta.meta
+
+# Thesis export
+Bystander_Thesis.docx

@@ -530,7 +530,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4b74028bfded9343b904d394a28f264, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChainWrap
-  linkMaterial: {fileID: 0}
+  linkMaterial: {fileID: 2100000, guid: 5b2a5fe0a6c84cb0a47e04860219857f, type: 2}
   linkColor: {r: 0.34591186, g: 0.34591186, b: 0.34591186, a: 1}
   strainColor: {r: 0.67295593, g: 0.67295593, b: 0.67295593, a: 1}
   torsoRadius: 0.2

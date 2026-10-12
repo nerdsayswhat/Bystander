@@ -30,6 +30,7 @@ public class ChainWrap : MonoBehaviour
     class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist; }
     Side left = new Side { left = true }, right = new Side();
     MaterialPropertyBlock mpb;
+    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");   // URP Unlit colour (Assets/Materials/ChainLink.mat)
     Transform[] torso; Renderer[] torsoR; Vector3[] torsoOff;   // torso links and their offsets from the body centre
     Vector3 body; float topY;                                    // smoothed body centre (XZ) and head height at start
 
@@ -52,8 +53,8 @@ public class ChainWrap : MonoBehaviour
 
         if (linkMaterial == null)
         {
-            linkMaterial = new Material(Shader.Find("Unlit/Color")) { color = linkColor };
-            // ponytail: Shader.Find may be stripped in builds; assign a real material before the Android build
+            linkMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = linkColor };
+            // fallback only; Assets/Materials/ChainLink.mat is assigned in the scene so the shader ships in builds
         }
         mpb = new MaterialPropertyBlock();
 
@@ -129,7 +130,7 @@ public class ChainWrap : MonoBehaviour
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
         float r = Mathf.Max(left.resist, right.resist);   // the whole chain shakes and lightens when either hand pulls
-        mpb.SetColor("_Color", Color.Lerp(linkColor, strainColor, r));
+        mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, r));
         for (int i = 0; i < torso.Length; i++)
         {
             torso[i].position = body + torsoOff[i] + Random.insideUnitSphere * (tremble * r);
@@ -158,7 +159,7 @@ public class ChainWrap : MonoBehaviour
         // resist: pull on the chain, but only while the hand is out away from the body, so bringing the wrists together stays quiet
         var off = real - body; off.y = 0f;
         s.resist = Mathf.InverseLerp(reach * tremorStart, reach + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
-        mpb.SetColor("_Color", Color.Lerp(linkColor, strainColor, s.resist));
+        mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, s.resist));
         var mid = (s.anchor + end) * 0.5f + Vector3.down * sag * (1f - strain);
         float len = Mathf.Max((end - s.anchor).magnitude, 0.01f);   // ponytail: straight-line length approximates the arc
         for (int i = 0; i < s.links.Length; i++)
