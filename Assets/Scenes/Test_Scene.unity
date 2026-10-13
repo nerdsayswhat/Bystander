@@ -543,10 +543,28 @@ MonoBehaviour:
   sag: 0.06
   reach: 0.35
   pullRange: 0.25
-  tremble: 0.0009
+  tremble: 0.002
   tremorStart: 0.75
+  awayStart: 0.3
+  awayFull: 0.45
   bodyBack: 0.08
   follow: 2
+  armed: 1
+  holdTime: 1.5
+  reachAngle: 35
+  requireFist: 0
+  fistDistance: 0.12
+  particleMaterial: {fileID: 0}
+  particleSize: 0.014
+  emission: 10
+  ringPoints: 30
+  renderSolid: 0
+  minStrain: 0.1
+  breakDuration: 1.2
+  scatterSpeed: 3.5
+  onBroken:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!4 &574630718
 Transform:
   m_ObjectHideFlags: 0
@@ -577,6 +595,7 @@ GameObject:
   - component: {fileID: 614997644}
   - component: {fileID: 614997643}
   - component: {fileID: 614997642}
+  - component: {fileID: 614997649}
   m_Layer: 0
   m_Name: '[BuildingBlock] Cube'
   m_TagString: Untagged
@@ -746,6 +765,18 @@ Transform:
   - {fileID: 462123168}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &614997649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 614997641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5f09f56e64320c42970fe3417719bd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreakTarget
 --- !u!1 &618042867
 GameObject:
   m_ObjectHideFlags: 0

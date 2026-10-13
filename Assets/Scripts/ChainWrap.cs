@@ -2,10 +2,17 @@ using System.Collections;
 using Oculus.Interaction.Input;
 using Oculus.Interaction.Locomotion;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 // Chains binding the player: a fixed helix around the torso plus a chain from a wrist cuff on each
 // hand to a belt anchor. The chain has a limited reach: past it the rendered hand is held at the
 // limit (SyntheticHand wrist lock) while the real hand keeps pulling, and the chain strains.
+// The chain is drawn as particles: every link (and cuff) is a ring of points; the solid link meshes stay
+// as an invisible skeleton (renderSolid shows them for comparison).
+// Break: pull a hand past the limit towards a BreakTarget for holdTime and the particles burst apart, the
+// hands are freed and onBroken fires. Release() disperses them without the event (scene 5).
 // Add to an empty GameObject in the scene (rig at world origin).
 public class ChainWrap : MonoBehaviour
 {
@@ -17,17 +24,40 @@ public class ChainWrap : MonoBehaviour
     public Vector3 beltAnchor = new Vector3(0.28f, 0.6f, 0.12f);  // cuff chain end: side, height below head, forward (mirrored for left)
     public float sag = 0.06f;                                     // near taut: a slack chain reads as a rope
     public float reach = 0.35f;                                  // max anchor -> hand distance before the hand is held
+    public float stretchLook = 2f;                                // how much the links themselves elongate and spread apart while stretched (1 = just the extra reach)
+    public float stretch = 0.12f;                                 // extra reach (m) the chain gives, only while the hand is aimed at a BreakTarget
     public float pullRange = 0.25f;                               // extra real-hand pull (m) for full strain
-    public float tremble = 0.0009f;                               // shake (m) at the highest pull; grows with distance from the body
+    public float tremble = 0.002f;                                // peak shake (m) when the hand is pulled out in any OTHER direction; grows with the pull
+    public float trembleTarget = 0.01f;                           // peak shake (m) when the pull is aimed at a BreakTarget: much more violent
     public float tremorStart = 0.75f;                             // fraction of reach where shaking and colour start
     public float awayStart = 0.3f, awayFull = 0.45f;              // hand distance from the body axis (m) where resistance fades in; nothing inside awayStart
     public float bodyBack = 0.08f;                                // chest sits this far behind the head
     public float follow = 2f;                                     // how fast the wrap re-centres on the player (1/s)
 
-    public float LeftStrain { get; private set; }                 // 0..1, for the break logic later
-    public float RightStrain { get; private set; }
+    public bool armed = true;                                     // the sequencer switches this off outside the break window
+    public float holdTime = 1.5f;                                  // seconds of deliberate grab (fist while pulling) to break
+    public float reachAngle = 35f;                                // degrees: the pull must point this close to a BreakTarget
+    public bool requireFist = false;                              // also demand a closed hand (see fistDistance)
+    public float fistDistance = 0.12f;                            // mean fingertip distance from the wrist (m) below which the hand counts as closed
+    public Material particleMaterial;                             // falls back to Resources/ChainParticle
+    public float particleSize = 0.014f;
+    public bool bloom = true;                                     // real glow: a cheap quarter-resolution bloom (costs frame time on Quest, check the FPS counter)
+    public float bloomIntensity = 2f, bloomThreshold = 0.8f;      // threshold high: only the brightened (pulled) chain blooms
+    public float emissionRest = 1.5f, emissionPull = 10f;         // self-lit brightness: normal at rest, very bright glowing at full pull (above ~3 the greys clip to white)
+    public int ringPoints = 30;                                   // particles per link: dense enough to read as a solid chain
+    public bool renderSolid = false;                              // draw the solid link meshes too (for comparing)
+    public float minStrain = 0.1f;                                // how far past the limit (0..1) the hand must pull for the grab to count
+    public float breakDuration = 1.2f, scatterSpeed = 3.5f;       // violent: the particles burst outwards and shrink over this long
+    public UnityEvent onBroken;                                   // the sequencer listens: jump to the cards
 
-    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist; }
+    public float LeftStrain { get; private set; }                 // 0..1
+    public float RightStrain { get; private set; }
+    public bool Broken { get; private set; }
+
+    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f; }
+    static readonly HandJointId[] Tips = { HandJointId.HandIndexTip, HandJointId.HandMiddleTip, HandJointId.HandRingTip, HandJointId.HandPinkyTip };
+    struct Src { public Transform t; public int n, group; public float y; public bool thick; }   // a ring of particles around a link or cuff
+    Material pmat; Src[] srcs; ParticleSystem ps; ParticleSystem.Particle[] parts; Vector3[] vel; float[] size; float brokenAt;
     Side left = new Side { left = true }, right = new Side();
     MaterialPropertyBlock mpb;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");   // URP Unlit colour (Assets/Materials/ChainLink.mat)
@@ -67,6 +97,100 @@ public class ChainWrap : MonoBehaviour
             for (int i = 0; i < handLinks; i++) s.links[i] = MakeLink(i);
             s.cuff = MakeCuff();
         }
+        BuildParticles();
+    }
+
+    void BuildParticles()
+    {
+        var list = new System.Collections.Generic.List<Src>();
+        foreach (var t in torso) list.Add(new Src { t = t, n = ringPoints, group = 0, thick = true });
+        foreach (var s in new[] { left, right })
+        {
+            int g = s.left ? 1 : 2;
+            foreach (var t in s.links) list.Add(new Src { t = t, n = ringPoints, group = g, thick = true });
+            foreach (float y in new[] { -0.5f, 0f, 0.5f })                       // three rings: the cuff is a band
+                list.Add(new Src { t = s.cuff, n = 20, group = g, y = y });
+        }
+        srcs = list.ToArray();
+        int total = 0;
+        foreach (var r in srcs) total += r.n;
+        parts = new ParticleSystem.Particle[total]; vel = new Vector3[total]; size = new float[total];
+
+        var go = new GameObject("ChainParticles");
+        go.transform.SetParent(transform, false);
+        ps = go.AddComponent<ParticleSystem>();
+        var main = ps.main; main.simulationSpace = ParticleSystemSimulationSpace.World; main.playOnAwake = false; main.maxParticles = total;
+        var em = ps.emission; em.enabled = false;
+        var sh = ps.shape; sh.enabled = false;
+        var rend = go.GetComponent<ParticleSystemRenderer>();
+        rend.sharedMaterial = particleMaterial != null ? particleMaterial : Resources.Load<Material>("ChainParticle");
+        pmat = rend.material;                                         // instance: the shared asset stays untouched
+        pmat.SetTexture("_BaseMap", DiscTexture());                   // round and flat, no shading or shadow side; alpha-clipped so it stays opaque
+        ps.Play();
+        for (int i = 0; i < parts.Length; i++) { parts[i].startLifetime = 1000f; parts[i].remainingLifetime = 1000f; }
+        if (!renderSolid)
+            foreach (var r in GetComponentsInChildren<MeshRenderer>()) r.enabled = false;
+        if (bloom) SetupGlow();
+    }
+
+    // post-processing is off in the project, so switch it on for the camera and add a global bloom volume at runtime
+    void SetupGlow()
+    {
+        Camera.main.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+        var vol = new GameObject("ChainGlow").AddComponent<Volume>();
+        vol.transform.SetParent(transform, false);
+        vol.isGlobal = true; vol.priority = 100;
+        var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+        var b = profile.Add<Bloom>(true);
+        b.threshold.Override(bloomThreshold);
+        b.intensity.Override(bloomIntensity);
+        b.scatter.Override(0.6f);
+        b.downscale.Override(BloomDownscaleMode.Quarter);
+        vol.sharedProfile = profile;
+    }
+
+    // a flat white disc: the colour channels stay 1 everywhere (no shadow side), only the alpha makes it round; the edge is cut by the material
+    static Texture2D DiscTexture()
+    {
+        const int n = 64;
+        var tex = new Texture2D(n, n, TextureFormat.RGBA32, true) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float dx = (x + 0.5f) / n * 2f - 1f, dy = (y + 0.5f) / n * 2f - 1f, r = Mathf.Sqrt(dx * dx + dy * dy);
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(255f * Mathf.Clamp01((1f - r) * 8f)));
+            }
+        tex.SetPixels32(px);
+        tex.Apply(true);
+        return tex;
+    }
+
+    // every frame: a ring of points around each link, coloured by how hard its chain is being pulled
+    void FillParticles()
+    {
+        float rt = Mathf.Max(left.resist, right.resist);
+        pmat.SetColor(BaseColor, Color.white * Mathf.Lerp(emissionRest, emissionPull, rt));   // the glow builds with the pull
+        var ct = Color.Lerp(linkColor, strainColor, rt);
+        var cl = Color.Lerp(linkColor, strainColor, left.resist);
+        var cr = Color.Lerp(linkColor, strainColor, right.resist);
+        int k = 0;
+        foreach (var r in srcs)
+        {
+            bool on = r.t.gameObject.activeSelf;
+            var c = r.group == 0 ? ct : r.group == 1 ? cl : cr;
+            float el = r.group == 0 ? 1f : r.group == 1 ? left.elong : right.elong;   // stretch along the link's long axis
+            for (int j = 0; j < r.n; j++, k++)
+            {
+                float a = 2f * Mathf.PI * j / r.n;
+                float y = r.thick ? (j % 2 == 0 ? 0.25f : -0.25f) : r.y;   // alternate above and below so a link has thickness
+                parts[k].position = r.t.TransformPoint(new Vector3(Mathf.Cos(a) * 0.5f, y, Mathf.Sin(a) * 0.5f * (r.thick ? el : 1f)));
+                parts[k].startColor = c;
+                size[k] = on ? particleSize : 0f;
+                parts[k].startSize = size[k];
+            }
+        }
+        ps.SetParticles(parts, parts.Length);
     }
 
     // chest centre: the head XZ pulled back along the facing direction (the head sits in front of the spine)
@@ -123,19 +247,74 @@ public class ChainWrap : MonoBehaviour
     void Update()
     {
         if (left.links == null) return;
+        if (Broken) { Scatter(); return; }
         // the wrap and belt anchors drift after the player, slowly, so they stay centred but still hold the hands
         body = Vector3.Lerp(body, BodyTarget(Camera.main.transform), 1f - Mathf.Exp(-follow * Time.deltaTime));
         left.anchor = body + new Vector3(-beltAnchor.x, topY - beltAnchor.y, beltAnchor.z);
         right.anchor = body + new Vector3(beltAnchor.x, topY - beltAnchor.y, beltAnchor.z);
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
-        float r = Mathf.Max(left.resist, right.resist);   // the whole chain shakes and lightens when either hand pulls
+        if (left.hold >= holdTime || right.hold >= holdTime) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
+        float r = Mathf.Max(left.resist, right.resist);   // the whole chain lightens when either hand pulls
+        float tr = Mathf.Max(left.shake, right.shake);   // and shakes with the harder-shaking hand
         mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, r));
         for (int i = 0; i < torso.Length; i++)
         {
-            torso[i].position = body + torsoOff[i] + Random.insideUnitSphere * (tremble * r);
+            torso[i].position = body + torsoOff[i] + Random.insideUnitSphere * tr;
             torsoR[i].SetPropertyBlock(mpb);
         }
+        FillParticles();
+    }
+
+    // is the hand being pulled towards a BreakTarget? dir runs from the belt anchor out to the real hand
+    bool AimedAtTarget(Vector3 from, Vector3 dir)
+    {
+        foreach (var t in BreakTarget.All)
+            if (Vector3.Angle(dir, t.transform.position - from) < reachAngle) return true;
+        return false;
+    }
+
+    bool IsFist(Side s)
+    {
+        if (s.synth == null || !s.synth.IsConnected) return false;
+        float sum = 0f; int n = 0;
+        foreach (var id in Tips)
+            if (s.synth.GetJointPoseFromWrist(id, out var pose)) { sum += pose.position.magnitude; n++; }
+        return n == Tips.Length && sum / n < fistDistance;
+    }
+
+    public void Release() => Break(false);   // chains gone without the event, e.g. entering scene 5
+
+    public void Break(bool fireEvent = true)
+    {
+        if (Broken || left.links == null) return;
+        Broken = true; brokenAt = Time.time;
+        Debug.Log($"ChainWrap: chain broken at {Time.time:0.00}s (fireEvent {fireEvent})");   // lines this up with a trace in logcat
+        foreach (var s in new[] { left, right })
+            if (s.synth != null) s.synth.FreeWrist(SyntheticHand.WristLockMode.Position);   // hands are free from now on
+        FillParticles();
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var away = parts[i].position - body; away.y = 0f;
+            vel[i] = (away.normalized + Vector3.up * 0.5f + Random.insideUnitSphere * 0.8f).normalized * (scatterSpeed * Random.Range(0.5f, 1.5f));
+        }
+        foreach (var t in torso) t.gameObject.SetActive(false);   // hide the solid skeleton (only visible with renderSolid)
+        foreach (var s in new[] { left, right }) { foreach (var t in s.links) t.gameObject.SetActive(false); s.cuff.gameObject.SetActive(false); }
+        if (fireEvent) onBroken.Invoke();
+    }
+
+    void Scatter()
+    {
+        float k = (Time.time - brokenAt) / breakDuration, dt = Time.deltaTime;
+        for (int i = 0; i < parts.Length; i++)
+        {
+            vel[i] *= 1f - 1.5f * dt;                              // drag: a burst, then a drift
+            vel[i] += Physics.gravity * 0.2f * dt;
+            parts[i].position += vel[i] * dt;
+            parts[i].startSize = size[i] * Mathf.Clamp01(1f - k);
+        }
+        ps.SetParticles(parts, parts.Length);
+        if (k >= 1f) { ps.Clear(); enabled = false; }
     }
 
     // returns strain 0..1. Chain is a quadratic bezier anchor -> hand with a small sag; links follow every frame.
@@ -145,11 +324,14 @@ public class ChainWrap : MonoBehaviour
         var real = s.hand.position;
         var d = real - s.anchor;
         float dist = d.magnitude, strain = 0f;
+        bool aimed = armed && AimedAtTarget(s.anchor, d);
+        s.aim = Mathf.MoveTowards(s.aim, aimed ? 1f : 0f, Time.deltaTime * 6f);   // blend (shake, stretch) so nothing jumps
+        float limit = reach + stretch * s.aim;                       // the chain stretches a little when, and only when, reaching for the object
         var end = real;
-        if (dist > reach)
+        if (dist > limit)
         {
-            end = s.anchor + d / dist * reach;                       // rendered hand stops at the chain limit
-            strain = Mathf.Clamp01((dist - reach) / pullRange);
+            end = s.anchor + d / dist * limit;                       // rendered hand stops at the chain limit
+            strain = Mathf.Clamp01((dist - limit) / pullRange);
             // ponytail: assumes the OVR hand anchor ~ the wrist; tune reach if the held hand looks off
             if (s.synth != null)
                 s.synth.LockWristPosition(s.synth.TrackingToWorldTransformer.ToTrackingPose(new Pose(end, Quaternion.identity)).position);
@@ -158,22 +340,28 @@ public class ChainWrap : MonoBehaviour
 
         // resist: pull on the chain, but only while the hand is out away from the body, so bringing the wrists together stays quiet
         var off = real - body; off.y = 0f;
-        s.resist = Mathf.InverseLerp(reach * tremorStart, reach + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
+        s.resist = Mathf.InverseLerp(limit * tremorStart, limit + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
+        // deliberate reach: pulling past the limit towards a BreakTarget; the chain strains harder the longer it is held
+        s.hold = aimed && strain >= minStrain && (!requireFist || IsFist(s)) ? s.hold + Time.deltaTime : 0f;
+        s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / holdTime));
         mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, s.resist));
+        s.shake = Mathf.Lerp(tremble, trembleTarget, s.aim) * s.resist;
         var mid = (s.anchor + end) * 0.5f + Vector3.down * sag * (1f - strain);
         float len = Mathf.Max((end - s.anchor).magnitude, 0.01f);   // ponytail: straight-line length approximates the arc
+        float stretched = Mathf.Max(1f, len / reach);                // 1 at normal reach, above 1 while stretched
+        s.elong = 1f + (stretched - 1f) * stretchLook;               // each link elongates along the chain
         for (int i = 0; i < s.links.Length; i++)
         {
-            float t = (i + 0.5f) * linkSpacing / len, u = 1f - t;
+            float t = (i + 0.5f) * linkSpacing * stretched / len, u = 1f - t;   // same number of links, spread further apart
             s.links[i].gameObject.SetActive(t <= 1f);
             if (t > 1f) continue;
             var pos = u * u * s.anchor + 2f * u * t * mid + t * t * end;
             var tangent = 2f * u * (mid - s.anchor) + 2f * t * (end - mid);
-            PlaceLink(s.links[i], pos + Random.insideUnitSphere * (tremble * s.resist), tangent, i);
+            PlaceLink(s.links[i], pos + Random.insideUnitSphere * s.shake, tangent, i);
             s.links[i].GetComponent<Renderer>().SetPropertyBlock(mpb);
         }
         var dir = end - s.anchor;
-        s.cuff.position = end + Random.insideUnitSphere * (tremble * s.resist);
+        s.cuff.position = end + Random.insideUnitSphere * s.shake;
         if (dir.sqrMagnitude > 1e-4f) s.cuff.rotation = Quaternion.LookRotation(dir) * Quaternion.Euler(90, 0, 0);
         s.cuff.GetComponent<Renderer>().SetPropertyBlock(mpb);
         return strain;
