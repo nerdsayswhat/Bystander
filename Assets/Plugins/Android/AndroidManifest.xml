@@ -14,6 +14,7 @@
     <meta-data android:name="com.oculus.telemetry.project_guid" android:value="2e68f9b9-bfec-496f-9256-31d06abba189" />
     <meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|questpro|quest3|quest3s|stanley" tools:replace="android:value" />
   </application>
+  <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
   <uses-feature android:name="android.hardware.vr.headtracking" android:version="1" android:required="true" />
   <horizonos:uses-horizonos-sdk horizonos:minSdkVersion="60" horizonos:targetSdkVersion="207" />
 </manifest>

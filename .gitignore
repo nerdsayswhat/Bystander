@@ -92,3 +92,13 @@ TempAssembly.dll
 
 # Thesis export
 Bystander_Thesis.docx
+
+# Printable mocap list
+Mocap_List.html
+Mocap_List.pdf
+
+# Android build output
+BystanderTest_BackUpThisFolder_ButDontShipItWithYourGame/
+Bystander_BurstDebugInformation_DoNotShip/
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
