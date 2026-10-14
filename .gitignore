@@ -105,3 +105,5 @@ Bystander_BurstDebugInformation_DoNotShip/
 
 # Office lock files (Word makes these while a doc is open)
 ~$*
+Technician_Notes.html
+Technician_Notes.pdf

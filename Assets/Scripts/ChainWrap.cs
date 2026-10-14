@@ -42,7 +42,7 @@ public class ChainWrap : MonoBehaviour
     public Material particleMaterial;                             // falls back to Resources/ChainParticle
     public float particleSize = 0.014f;
     public bool bloom = true;                                     // real glow: a cheap quarter-resolution bloom (costs frame time on Quest, check the FPS counter)
-    public float bloomIntensity = 2f, bloomThreshold = 0.8f;      // threshold high: only the brightened (pulled) chain blooms
+    public float bloomIntensity = 2f, bloomThreshold = 0.4f;      // low: every bright object glows, the resting chain included
     public float emissionRest = 1.5f, emissionPull = 10f;         // self-lit brightness: normal at rest, very bright glowing at full pull (above ~3 the greys clip to white)
     public int ringPoints = 30;                                   // particles per link: dense enough to read as a solid chain
     public bool renderSolid = false;                              // draw the solid link meshes too (for comparing)
@@ -53,6 +53,15 @@ public class ChainWrap : MonoBehaviour
     public float LeftStrain { get; private set; }                 // 0..1
     public float RightStrain { get; private set; }
     public bool Broken { get; private set; }
+    // read-only state for ExperienceLog (what the chain is doing, per hand)
+    public float LeftResist => left.resist;
+    public float RightResist => right.resist;
+    public float LeftAim => left.aim;
+    public float RightAim => right.aim;
+    public float LeftHold => left.hold;
+    public float RightHold => right.hold;
+    public float LeftShake => left.shake;
+    public float RightShake => right.shake;
 
     class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f; }
     static readonly HandJointId[] Tips = { HandJointId.HandIndexTip, HandJointId.HandMiddleTip, HandJointId.HandRingTip, HandJointId.HandPinkyTip };
