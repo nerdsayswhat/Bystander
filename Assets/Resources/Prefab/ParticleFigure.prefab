@@ -47,10 +47,12 @@ MonoBehaviour:
   model: {fileID: 919132149155446097, guid: 37e159a0f6bf7b84fa476de2ccde24fd, type: 3}
   clip: {fileID: 0}
   loop: 1
-  particleCount: 1500
+  particleCount: 2500
   particleSize: 0.014
+  sizeMin: 0.008
+  sizeMax: 0.025
   emission: 10
-  color: {r: 0.065, g: 0.088, b: 0.1, a: 1}
+  color: {r: 0.004, g: 0.05, b: 0.16, a: 1}
   particleMaterial: {fileID: 0}
   position: {x: 0, y: 0, z: 1.5}
   groundY: 0

@@ -10,10 +10,11 @@ public class ParticleFigure : MonoBehaviour
     public GameObject model;                       // the humanoid FBX (e.g. T_Pose); only its skeleton is used
     public AnimationClip clip;                     // the clip to play; looped by this script
     public bool loop = true;                       // untick for one-shots (kneel down, lie in pain, pick up): plays once and holds the last pose
-    public int particleCount = 1500;              // total for the figure; raise or lower to find the Quest budget
-    public float particleSize = 0.014f;
+    public int particleCount = 2500;              // total for the figure; raise or lower to find the Quest budget
+    public float particleSize = 0.014f;  
+    public float sizeMin = 0.008f, sizeMax = 0.025f;   // each particle gets a random size in this range (m), so the figure looks organic, not uniform; particleSize is only used to rest the feet on the floor
     public float emission = 10f;                   // at 10 the colour below gives a pale, bright blue, like the chain at its maximum
-    public Color color = new Color(0.065f, 0.088f, 0.1f);   // x emission 10 = a pale blue of luminance about 0.84, above the bloom threshold so it glows
+    public Color color = new Color(0.004f, 0.05f, 0.16f);   // x emission 10 = (0.04, 0.5, 1.6): a saturated azure blue, strong in blue and green, almost no red, so it stays blue when it blooms (the old grey-blue (0.065, 0.088, 0.1) x 10 read as white)
     public Material particleMaterial;              // falls back to Resources/ChainParticle (flat discs, alpha clipped)
     public Vector3 position = new Vector3(0f, 0f, 1.5f);   // where the figure stands (world), facing the origin
     public float groundY = 0f;                      // world height of the floor (the tracking origin is the floor); the lowest particle is placed on it
@@ -23,9 +24,11 @@ public class ParticleFigure : MonoBehaviour
     static readonly Seg[] Body =
     {
         new Seg { a = HumanBodyBones.Hips,          b = HumanBodyBones.Chest,         radius = 0.15f,  weight = 3.0f },
+        new Seg { a = HumanBodyBones.LeftUpperLeg,  b = HumanBodyBones.RightUpperLeg, radius = 0.12f,  weight = 1.6f },   // pelvis: a band across both hip joints, so the torso and the thighs join instead of leaving a gap
         new Seg { a = HumanBodyBones.Chest,         b = HumanBodyBones.Neck,          radius = 0.16f,  weight = 3.0f },
         new Seg { a = HumanBodyBones.Neck,          b = HumanBodyBones.Head,          radius = 0.05f,  weight = 0.5f },
-        new Seg { a = HumanBodyBones.Head,          b = HumanBodyBones.Head,          radius = 0.11f,  weight = 2.0f },   // ball
+        new Seg { a = HumanBodyBones.LeftShoulder,  b = HumanBodyBones.LeftUpperArm,  radius = 0.05f,  weight = 0.6f },   // collar bones: fill the gap between the neck and the shoulder joints
+        new Seg { a = HumanBodyBones.RightShoulder, b = HumanBodyBones.RightUpperArm, radius = 0.05f,  weight = 0.6f },
         new Seg { a = HumanBodyBones.LeftUpperArm,  b = HumanBodyBones.LeftLowerArm,  radius = 0.045f, weight = 1.0f },
         new Seg { a = HumanBodyBones.LeftLowerArm,  b = HumanBodyBones.LeftHand,      radius = 0.04f,  weight = 1.0f },
         new Seg { a = HumanBodyBones.RightUpperArm, b = HumanBodyBones.RightLowerArm, radius = 0.045f, weight = 1.0f },
@@ -38,6 +41,22 @@ public class ParticleFigure : MonoBehaviour
         new Seg { a = HumanBodyBones.RightFoot,     b = HumanBodyBones.RightToes,     radius = 0.045f, weight = 0.8f },
         new Seg { a = HumanBodyBones.LeftHand,      b = HumanBodyBones.LeftMiddleProximal,  radius = 0.035f, weight = 0.4f },   // hands
         new Seg { a = HumanBodyBones.RightHand,     b = HumanBodyBones.RightMiddleProximal, radius = 0.035f, weight = 0.4f },
+    };
+
+    // rounded blobs on a bone: offset and radii are in the figure's own axes (x right, y up, z forward, so z is the way it faces)
+    struct Blob { public HumanBodyBones bone; public Vector3 offset, radii; public float weight; }
+    static Blob Ball(HumanBodyBones b, float r, float w) => new Blob { bone = b, radii = new Vector3(r, r, r), weight = w };
+    static readonly Blob[] Blobs =
+    {
+        new Blob { bone = HumanBodyBones.Head, offset = new Vector3(0f, 0.105f, -0.005f), radii = new Vector3(0.075f, 0.10f, 0.09f),  weight = 2.0f },   // skull: taller than wide, not a sphere
+        new Blob { bone = HumanBodyBones.Head, offset = new Vector3(0f, 0.04f, 0.04f),    radii = new Vector3(0.055f, 0.05f, 0.05f),  weight = 0.9f },   // jaw and chin, pushed forward and down
+        Ball(HumanBodyBones.Neck, 0.065f, 0.4f),
+        Ball(HumanBodyBones.LeftUpperArm, 0.065f, 0.6f),  Ball(HumanBodyBones.RightUpperArm, 0.065f, 0.6f),    // shoulders
+        Ball(HumanBodyBones.LeftLowerArm, 0.045f, 0.35f), Ball(HumanBodyBones.RightLowerArm, 0.045f, 0.35f),   // elbows
+        Ball(HumanBodyBones.LeftHand, 0.04f, 0.3f),       Ball(HumanBodyBones.RightHand, 0.04f, 0.3f),         // wrists
+        Ball(HumanBodyBones.LeftUpperLeg, 0.085f, 0.6f),  Ball(HumanBodyBones.RightUpperLeg, 0.085f, 0.6f),    // hips
+        Ball(HumanBodyBones.LeftLowerLeg, 0.065f, 0.45f), Ball(HumanBodyBones.RightLowerLeg, 0.065f, 0.45f),   // knees
+        Ball(HumanBodyBones.LeftFoot, 0.05f, 0.35f),      Ball(HumanBodyBones.RightFoot, 0.05f, 0.35f),        // ankles
     };
 
     public Transform Skeleton { get; private set; }                // the instantiated skeleton (for ExperienceLog; Body is the segment table)
@@ -88,6 +107,7 @@ public class ParticleFigure : MonoBehaviour
     {
         float total = 0f;
         foreach (var s in Body) total += s.weight;
+        foreach (var b in Blobs) total += b.weight;
         var bl = new System.Collections.Generic.List<Transform>(); var ll = new System.Collections.Generic.List<Vector3>();
         foreach (var s in Body)
         {
@@ -95,20 +115,25 @@ public class ParticleFigure : MonoBehaviour
             if (ta == null || tb == null) continue;
             int n = Mathf.Max(1, Mathf.RoundToInt(particleCount * s.weight / total));
             var axisW = tb.position - ta.position;
-            bool ball = s.a == s.b;
-            float len = ball ? 0f : axisW.magnitude;
-            var axisDir = ball ? Vector3.up : axisW.normalized;
+            var axisDir = axisW.normalized;
             var side = Vector3.Cross(axisDir, Vector3.right).sqrMagnitude > 0.01f ? Vector3.Cross(axisDir, Vector3.right).normalized : Vector3.Cross(axisDir, Vector3.forward).normalized;
             var up = Vector3.Cross(axisDir, side);
             for (int i = 0; i < n; i++)
             {
-                Vector3 p;
-                if (ball) p = ta.position + Vector3.up * s.radius + Random.onUnitSphere * s.radius;               // a head above the head bone
-                else
-                {
-                    float t = Random.value, ang = Random.value * 2f * Mathf.PI;
-                    p = ta.position + axisW * t + (side * Mathf.Cos(ang) + up * Mathf.Sin(ang)) * s.radius;
-                }
+                float t = Random.value, ang = Random.value * 2f * Mathf.PI;
+                var p = ta.position + axisW * t + (side * Mathf.Cos(ang) + up * Mathf.Sin(ang)) * s.radius;
+                bl.Add(ta); ll.Add(ta.InverseTransformPoint(p));
+            }
+        }
+        foreach (var b in Blobs)
+        {
+            var ta = anim.GetBoneTransform(b.bone);
+            if (ta == null) continue;
+            int n = Mathf.Max(1, Mathf.RoundToInt(particleCount * b.weight / total));
+            for (int i = 0; i < n; i++)
+            {
+                var q = Random.onUnitSphere;
+                var p = ta.position + Skeleton.TransformVector(b.offset + Vector3.Scale(q, b.radii));
                 bl.Add(ta); ll.Add(ta.InverseTransformPoint(p));
             }
         }
@@ -123,7 +148,7 @@ public class ParticleFigure : MonoBehaviour
     void BuildSystem()
     {
         parts = new ParticleSystem.Particle[bone.Length];
-        for (int i = 0; i < parts.Length; i++) { parts[i].startLifetime = 1000f; parts[i].remainingLifetime = 1000f; parts[i].startSize = particleSize; parts[i].startColor = color; }
+        for (int i = 0; i < parts.Length; i++) { parts[i].startLifetime = 1000f; parts[i].remainingLifetime = 1000f; parts[i].startSize = Random.Range(sizeMin, sizeMax); parts[i].startColor = color; }
         var go = new GameObject("FigureParticles");
         go.transform.SetParent(transform, false);
         ps = go.AddComponent<ParticleSystem>();
