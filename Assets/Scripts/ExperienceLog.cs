@@ -122,8 +122,11 @@ public class ExperienceLog : MonoBehaviour
             sb.Append(']');
         }
 
-        foreach (var f in FindObjectsByType<ParticleFigure>(FindObjectsSortMode.None))
+        var figures = FindObjectsByType<ParticleFigure>(FindObjectsSortMode.None);
+        if (figures.Length > 3) sb.Append(" figures=").Append(figures.Length);   // stress test: list only the first three
+        for (int fi = 0; fi < figures.Length && fi < 3; fi++)
         {
+            var f = figures[fi];
             sb.Append(" figure[").Append(f.name).Append(" particles=").Append(f.ParticleCount).Append(" clip=").Append(f.clip != null ? f.clip.name : "none").Append(" t=").Append(f.ClipTime.ToString("0.0")).Append(" feetY=").Append(f.LowestY.ToString("0.000"));
             if (f.Skeleton != null && head != null) sb.Append(" at=").Append(V(f.Skeleton.position)).Append(" dist=").Append(Vector3.Distance(head.position, f.Skeleton.position).ToString("0.0")).Append(" gaze=").Append(Vector3.Angle(head.forward, f.Skeleton.position - head.position).ToString("0")).Append("deg");
             sb.Append(']');

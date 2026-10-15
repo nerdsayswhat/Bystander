@@ -9,7 +9,8 @@ public class ParticleFigure : MonoBehaviour
 {
     public GameObject model;                       // the humanoid FBX (e.g. T_Pose); only its skeleton is used
     public AnimationClip clip;                     // the clip to play; looped by this script
-    public int particleCount = 1500;               // total for the figure; raise or lower to find the Quest budget
+    public bool loop = true;                       // untick for one-shots (kneel down, lie in pain, pick up): plays once and holds the last pose
+    public int particleCount = 1500;              // total for the figure; raise or lower to find the Quest budget
     public float particleSize = 0.014f;
     public float emission = 10f;                   // at 10 the colour below gives a pale, bright blue, like the chain at its maximum
     public Color color = new Color(0.065f, 0.088f, 0.1f);   // x emission 10 = a pale blue of luminance about 0.84, above the bloom threshold so it glows
@@ -140,7 +141,8 @@ public class ParticleFigure : MonoBehaviour
     void Update()
     {
         if (clip == null || !graph.IsValid()) return;
-        clipTime = (clipTime + Time.deltaTime) % Mathf.Max(clip.length, 0.01f);   // loops
+        float len = Mathf.Max(clip.length, 0.01f);
+        clipTime = loop ? (clipTime + Time.deltaTime) % len : Mathf.Min(clipTime + Time.deltaTime, len);   // loops, or plays once and holds the last pose
         playable.SetTime(clipTime);
         graph.Evaluate(0f);
     }
