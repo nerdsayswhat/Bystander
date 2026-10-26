@@ -12,12 +12,12 @@ using Oculus.Interaction;
 // Delete this file (and nothing else) for the final build.
 public class ExperienceLog : MonoBehaviour
 {
-    const bool InEditor = false;           // true to log in the editor Console as well
+    const bool InEditor = true;            // true to log in the editor Console as well (on while testing over Quest Link; the lines are in Editor.log)
     const string Tag = "BYSTANDER";
     public float interval = 0.5f;          // seconds between STATE lines
     public float hitchMs = 22f;            // a frame longer than this is an event
 
-    ChainWrap chain; SceneSequencer sequencer;
+    ChainWrap chain; SceneSequencer sequencer; Spectacle spectacle;
     Transform head, left, right;
     Grabbable[] grabbables; bool[] held;
     float acc, worst, findTimer; int frames, states, hitches;
@@ -56,6 +56,7 @@ public class ExperienceLog : MonoBehaviour
         if (right == null) right = GameObject.Find("RightHandAnchor")?.transform;
         if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
         if (sequencer == null) sequencer = FindFirstObjectByType<SceneSequencer>();
+        if (spectacle == null) spectacle = FindFirstObjectByType<Spectacle>();
     }
 
     void Update()
@@ -104,6 +105,9 @@ public class ExperienceLog : MonoBehaviour
         if (head != null)
             sb.Append(" head=").Append(V(head.position)).Append(" yaw=").Append(head.eulerAngles.y.ToString("0")).Append(" pitch=").Append((-Mathf.DeltaAngle(0f, head.eulerAngles.x)).ToString("0"));
         Hand("L", left); Hand("R", right);
+
+        if (spectacle != null)
+            sb.Append(" spectacle[on=").Append(spectacle.IsOn ? 1 : 0).Append(" flashes=").Append(spectacle.Flashes).Append(" gaze=").Append(spectacle.GazeAngle.ToString("0")).Append("deg looked=").Append(spectacle.LookedUp ? 1 : 0).Append(" vol=").Append(spectacle.Volume.ToString("0.00")).Append(']');
 
         if (chain != null)
         {

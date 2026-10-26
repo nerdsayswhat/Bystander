@@ -96,6 +96,8 @@ public class ParticleFigure : MonoBehaviour
             var output = AnimationPlayableOutput.Create(graph, "anim", anim);
             output.SetSourcePlayable(playable);
             graph.Evaluate(0f);                             // the bones take the clip's first pose before the particles are bound
+            var hips = anim.GetBoneTransform(HumanBodyBones.Hips);   // mocap carries the performer's studio position: start the clip with the hips over the figure's position
+            if (hips != null) Skeleton.position += new Vector3(position.x - hips.position.x, 0f, position.z - hips.position.z);
         }
 
         Bind(anim);
@@ -177,14 +179,16 @@ public class ParticleFigure : MonoBehaviour
         if (ps == null) return;
         float low = float.MaxValue;
         for (int i = 0; i < parts.Length; i++) { parts[i].position = bone[i].TransformPoint(local[i]); low = Mathf.Min(low, parts[i].position.y); }
-        LowestY = low;
+        float lift = groundY + particleSize * 0.5f - low;   // keep the lowest particle on the floor every frame: kneeling and lying clips touch the ground instead of floating
+        for (int i = 0; i < parts.Length; i++) parts[i].position += Vector3.up * lift;
+        LowestY = -lift;                                    // how far the clip itself had lifted the figure (0 = feet on the floor)
         ps.SetParticles(parts, parts.Length);
     }
 
     void OnDestroy() { if (graph.IsValid()) graph.Destroy(); }
 
     // same flat white disc as the chain: round through the alpha, no shading or shadow side
-    static Texture2D DiscTexture()
+    public static Texture2D DiscTexture()
     {
         const int n = 64;
         var tex = new Texture2D(n, n, TextureFormat.RGBA32, true) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };

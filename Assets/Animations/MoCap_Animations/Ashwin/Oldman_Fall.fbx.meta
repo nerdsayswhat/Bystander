@@ -1,0 +1,1305 @@
+fileFormatVersion: 2
+guid: 542c1d500eb840b3a0dbda5cbca22fd2
+ModelImporter:
+  serializedVersion: 24200
+  internalIDToNameTable: []
+  externalObjects: {}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: "\nClip 'Oldman_Fall_Take03_mcp' has import animation
+      warnings that might lower retargeting quality:\nNote: Activate translation
+      DOF on avatar to improve retargeting quality.\n\t'Ashwin:Spine3' is inbetween
+      humanoid transforms and has rotation animation that will be discarded.\n\t'Ashwin:Neck1'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\t'Ashwin:RightHandRing'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\t'Ashwin:RightHandIndex'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\t'Ashwin:LeftHandRing'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n\t'Ashwin:LeftHandIndex'
+      is inbetween humanoid transforms and has rotation animation that will be discarded.\n"
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Oldman_Fall_Take03_mcp
+      takeName: Oldman_Fall_Take03_mcp
+      internalID: -1104267962216416188
+      firstFrame: 439
+      lastFrame: 637
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 1
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human:
+    - boneName: Ashwin:Hips
+      humanName: Hips
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftUpLeg
+      humanName: LeftUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightUpLeg
+      humanName: RightUpperLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftLeg
+      humanName: LeftLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightLeg
+      humanName: RightLowerLeg
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftFoot
+      humanName: LeftFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightFoot
+      humanName: RightFoot
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:Spine
+      humanName: Spine
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:Spine1
+      humanName: Chest
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:Neck
+      humanName: Neck
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:Head
+      humanName: Head
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftShoulder
+      humanName: LeftShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightShoulder
+      humanName: RightShoulder
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftArm
+      humanName: LeftUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightArm
+      humanName: RightUpperArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftForeArm
+      humanName: LeftLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightForeArm
+      humanName: RightLowerArm
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHand
+      humanName: LeftHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHand
+      humanName: RightHand
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftToeBase
+      humanName: LeftToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightToeBase
+      humanName: RightToes
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandThumb1
+      humanName: Left Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandThumb2
+      humanName: Left Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandThumb3
+      humanName: Left Thumb Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandRing1
+      humanName: Left Index Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandRing2
+      humanName: Left Index Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandRing3
+      humanName: Left Index Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandMiddle1
+      humanName: Left Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandMiddle2
+      humanName: Left Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandMiddle3
+      humanName: Left Middle Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandPinky
+      humanName: Left Little Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandPinky1
+      humanName: Left Little Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:LeftHandPinky2
+      humanName: Left Little Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandThumb1
+      humanName: Right Thumb Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandThumb2
+      humanName: Right Thumb Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandThumb3
+      humanName: Right Thumb Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandRing1
+      humanName: Right Index Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandRing2
+      humanName: Right Index Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandRing3
+      humanName: Right Index Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandMiddle1
+      humanName: Right Middle Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandMiddle2
+      humanName: Right Middle Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandMiddle3
+      humanName: Right Middle Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandPinky
+      humanName: Right Little Proximal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandPinky1
+      humanName: Right Little Intermediate
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:RightHandPinky2
+      humanName: Right Little Distal
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    - boneName: Ashwin:Spine2
+      humanName: UpperChest
+      limit:
+        min: {x: 0, y: 0, z: 0}
+        max: {x: 0, y: 0, z: 0}
+        value: {x: 0, y: 0, z: 0}
+        length: 0
+        modified: 0
+    skeleton:
+    - name: Oldman_Fall(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System
+      parentName: Oldman_Fall(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152559
+      parentName: System
+      position: {x: 1.3189087, y: 3.185465, z: 2.7268343}
+      rotation: {x: 0.84433085, y: -0.16601111, z: -0.0700618, w: 0.5046158}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152563
+      parentName: System
+      position: {x: 2.9840758, y: -0.328626, z: 2.9141195}
+      rotation: {x: 0.67415124, y: -0.6557783, z: -0.25458795, w: 0.22507755}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152570
+      parentName: System
+      position: {x: 0.3960223, y: 3.2126272, z: 2.719257}
+      rotation: {x: 0.8806313, y: 0.0102736205, z: 0.038607746, w: 0.47211486}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152582
+      parentName: System
+      position: {x: 0.6134603, y: -0.88783234, z: 2.9443834}
+      rotation: {x: -0.012183034, y: -0.970054, z: -0.24252625, w: -0.0052800775}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152593
+      parentName: System
+      position: {x: -3.1927874, y: -0.9092751, z: 2.925984}
+      rotation: {x: 0.58097655, y: 0.74297833, z: 0.270101, w: 0.19363603}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152612
+      parentName: System
+      position: {x: 3.031741, y: 0.6460973, z: 2.9165258}
+      rotation: {x: 0.76955193, y: -0.5220956, z: -0.16851963, w: 0.32681373}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152614
+      parentName: System
+      position: {x: -3.0915384, y: 1.0571148, z: 2.9253838}
+      rotation: {x: 0.6936233, y: 0.5688983, z: 0.29547882, w: 0.32853273}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152616
+      parentName: System
+      position: {x: -0.46219894, y: -0.8713834, z: 2.9482837}
+      rotation: {x: -0.0089310855, y: -0.9644024, z: -0.26376045, w: 0.016694665}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152619
+      parentName: System
+      position: {x: -0.6226118, y: 2.0745091, z: 2.935631}
+      rotation: {x: 0.9493388, y: -0.008113071, z: -0.01118511, w: 0.31395048}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152621
+      parentName: System
+      position: {x: -0.5185669, y: 3.218445, z: 2.7191472}
+      rotation: {x: 0.8693802, y: 0.018670158, z: 0.030296596, w: 0.49286076}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152622
+      parentName: System
+      position: {x: -3.0758483, y: 1.9848628, z: 2.9311876}
+      rotation: {x: 0.819573, y: 0.37000754, z: 0.15393202, w: 0.40951136}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152623
+      parentName: System
+      position: {x: -3.1955218, y: -0.15650097, z: 2.9329114}
+      rotation: {x: 0.6900415, y: 0.657898, z: 0.22668137, w: 0.1990693}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152624
+      parentName: System
+      position: {x: -1.5094696, y: 3.2011757, z: 2.7183788}
+      rotation: {x: 0.82989806, y: 0.16902165, z: 0.09810877, w: 0.5225664}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152625
+      parentName: System
+      position: {x: 2.97973, y: -1.0277829, z: 2.9191885}
+      rotation: {x: 0.5994332, y: -0.7284557, z: -0.26786038, w: 0.19566035}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152626
+      parentName: System
+      position: {x: 3.0032616, y: 1.4838551, z: 2.9007897}
+      rotation: {x: 0.82275355, y: -0.4700799, z: -0.16499215, w: 0.27364045}
+      scale: {x: 1, y: 1, z: 1}
+    - name: System:Vero_v2_2_2152627
+      parentName: System
+      position: {x: -1.6157173, y: -0.84607, z: 2.950187}
+      rotation: {x: -0.32307082, y: -0.89925784, z: -0.2732216, w: -0.110952795}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin
+      parentName: Oldman_Fall(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:ARIEL
+      parentName: Ashwin
+      position: {x: -1.722047, y: 0.42958036, z: 1.7552208}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LFHD
+      parentName: Ashwin
+      position: {x: -1.6830115, y: 0.3386592, z: 1.673352}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LBHD
+      parentName: Ashwin
+      position: {x: -1.7869788, y: 0.33395252, z: 1.6628397}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RFHD
+      parentName: Ashwin
+      position: {x: -1.6672255, y: 0.4928007, z: 1.6702615}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RBHD
+      parentName: Ashwin
+      position: {x: -1.7886227, y: 0.5027334, z: 1.6674205}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:C7
+      parentName: Ashwin
+      position: {x: -1.9420999, y: 0.4064276, z: 1.496248}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:T10
+      parentName: Ashwin
+      position: {x: -2.0345557, y: 0.39380345, z: 1.3297404}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LT10
+      parentName: Ashwin
+      position: {x: -2.0329309, y: 0.3177164, z: 1.2617891}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RT10
+      parentName: Ashwin
+      position: {x: -2.06161, y: 0.4768925, z: 1.2600042}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:CLAV
+      parentName: Ashwin
+      position: {x: -1.7940834, y: 0.4339266, z: 1.3330772}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:STRN
+      parentName: Ashwin
+      position: {x: -1.7938597, y: 0.44201577, z: 1.2059735}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LFSH
+      parentName: Ashwin
+      position: {x: -1.790766, y: 0.32886735, z: 1.4129881}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LTSH
+      parentName: Ashwin
+      position: {x: -1.8097444, y: 0.26473388, z: 1.4546342}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LBSH
+      parentName: Ashwin
+      position: {x: -1.9369117, y: 0.29958528, z: 1.4747729}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LUPA
+      parentName: Ashwin
+      position: {x: -1.8256041, y: 0.1880103, z: 1.2939646}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LELB
+      parentName: Ashwin
+      position: {x: -1.8661175, y: 0.14410207, z: 1.1237499}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LBEL
+      parentName: Ashwin
+      position: {x: -1.9391181, y: 0.1558034, z: 1.1038055}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LFRM
+      parentName: Ashwin
+      position: {x: -1.8400317, y: 0.1371336, z: 1.0039637}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LIWR
+      parentName: Ashwin
+      position: {x: -1.7962554, y: 0.19786604, z: 0.8918341}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LOWR
+      parentName: Ashwin
+      position: {x: -1.8521088, y: 0.12652081, z: 0.8797606}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LIHAND
+      parentName: Ashwin
+      position: {x: -1.7744073, y: 0.17402856, z: 0.83188826}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LOHAND
+      parentName: Ashwin
+      position: {x: -1.822061, y: 0.13052541, z: 0.8257257}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LTHM3
+      parentName: Ashwin
+      position: {x: -1.7933329, y: 0.2413333, z: 0.7838071}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LIDX3
+      parentName: Ashwin
+      position: {x: -1.7925798, y: 0.22800927, z: 0.7322231}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LPNK3
+      parentName: Ashwin
+      position: {x: -1.841899, y: 0.18122727, z: 0.73611945}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RFSH
+      parentName: Ashwin
+      position: {x: -1.8141483, y: 0.5290416, z: 1.4228704}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RTSH
+      parentName: Ashwin
+      position: {x: -1.8590328, y: 0.59087956, z: 1.4728624}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RBSH
+      parentName: Ashwin
+      position: {x: -1.9603494, y: 0.49864718, z: 1.487979}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RUPA
+      parentName: Ashwin
+      position: {x: -1.9233552, y: 0.6683574, z: 1.3013397}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RELB
+      parentName: Ashwin
+      position: {x: -1.9394085, y: 0.69684285, z: 1.1332498}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RBEL
+      parentName: Ashwin
+      position: {x: -2.0268936, y: 0.66252714, z: 1.1280448}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RFRM
+      parentName: Ashwin
+      position: {x: -1.9603258, y: 0.7143093, z: 1.0193859}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RIWR
+      parentName: Ashwin
+      position: {x: -1.9185878, y: 0.6691757, z: 0.9053147}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:ROWR
+      parentName: Ashwin
+      position: {x: -1.9895936, y: 0.72642165, z: 0.91720784}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RIHAND
+      parentName: Ashwin
+      position: {x: -1.9150633, y: 0.71125436, z: 0.848658}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:ROHAND
+      parentName: Ashwin
+      position: {x: -1.9781511, y: 0.7329516, z: 0.8477542}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RTHM3
+      parentName: Ashwin
+      position: {x: -1.9230348, y: 0.6406035, z: 0.7914383}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RIDX3
+      parentName: Ashwin
+      position: {x: -1.9306278, y: 0.66764593, z: 0.7504762}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RPNK3
+      parentName: Ashwin
+      position: {x: -1.9937935, y: 0.68618107, z: 0.7667817}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LFWT
+      parentName: Ashwin
+      position: {x: -1.8567451, y: 0.34458485, z: 0.9584562}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LMWT
+      parentName: Ashwin
+      position: {x: -1.9376853, y: 0.25867262, z: 1.0087247}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LBWT
+      parentName: Ashwin
+      position: {x: -2.0705924, y: 0.33348185, z: 1.0611725}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RFWT
+      parentName: Ashwin
+      position: {x: -1.8763578, y: 0.52998596, z: 0.95648664}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RMWT
+      parentName: Ashwin
+      position: {x: -1.9590454, y: 0.5960186, z: 1.0033721}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RBWT
+      parentName: Ashwin
+      position: {x: -2.0824695, y: 0.47699016, z: 1.0173749}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LTHI
+      parentName: Ashwin
+      position: {x: -1.8846214, y: 0.28924596, z: 0.7080025}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LKNE
+      parentName: Ashwin
+      position: {x: -1.8902578, y: 0.30228916, z: 0.51109546}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LKNU
+      parentName: Ashwin
+      position: {x: -1.8495032, y: 0.36374754, z: 0.5044862}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LSHN
+      parentName: Ashwin
+      position: {x: -1.9448473, y: 0.30561882, z: 0.3137124}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LANK
+      parentName: Ashwin
+      position: {x: -1.9881979, y: 0.33535188, z: 0.10876804}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LHEL
+      parentName: Ashwin
+      position: {x: -2.0824702, y: 0.4075921, z: 0.05183978}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LMT5
+      parentName: Ashwin
+      position: {x: -1.846052, y: 0.29657465, z: 0.053756785}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LMT1
+      parentName: Ashwin
+      position: {x: -1.8484346, y: 0.41679794, z: 0.05120205}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LTOE
+      parentName: Ashwin
+      position: {x: -1.7929486, y: 0.36163592, z: 0.06719457}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RTHI
+      parentName: Ashwin
+      position: {x: -1.9536012, y: 0.5909601, z: 0.71330315}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RKNE
+      parentName: Ashwin
+      position: {x: -1.972901, y: 0.58405316, z: 0.5111257}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RKNU
+      parentName: Ashwin
+      position: {x: -1.9158431, y: 0.5260467, z: 0.49394527}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RSHN
+      parentName: Ashwin
+      position: {x: -2.0470295, y: 0.5743063, z: 0.28889403}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RANK
+      parentName: Ashwin
+      position: {x: -2.063371, y: 0.55417776, z: 0.103131}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RHEL
+      parentName: Ashwin
+      position: {x: -2.1500123, y: 0.48426563, z: 0.053533394}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RMT5
+      parentName: Ashwin
+      position: {x: -1.9623997, y: 0.6144197, z: 0.04852937}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RMT1
+      parentName: Ashwin
+      position: {x: -1.9134773, y: 0.49021822, z: 0.04868309}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RTOE
+      parentName: Ashwin
+      position: {x: -1.8793151, y: 0.55368716, z: 0.070082724}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Hips
+      parentName: Ashwin
+      position: {x: 0.00000011920929, y: -0.00000017881393, z: 0.9203837}
+      rotation: {x: -0.0003672805, y: -0.17277749, z: -0.98491776, w: 0.009214441}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Spine
+      parentName: Ashwin:Hips
+      position: {x: -0, y: 0, z: 0.10591426}
+      rotation: {x: -0.010180948, y: -0.007338623, z: -0.0057026157, w: 0.999905}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Spine1
+      parentName: Ashwin:Spine
+      position: {x: -0, y: 0, z: 0.10591426}
+      rotation: {x: -0.1406077, y: -0.008020182, z: -0.0046959464, w: 0.9900218}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Spine2
+      parentName: Ashwin:Spine1
+      position: {x: -0, y: 0, z: 0.10591426}
+      rotation: {x: -0.114065446, y: 0.014580631, z: -0.005686372, w: 0.99334997}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Spine3
+      parentName: Ashwin:Spine2
+      position: {x: -0, y: 0, z: 0.10591426}
+      rotation: {x: -0.07062756, y: 0.01481479, z: -0.0050449623, w: 0.99738}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Neck
+      parentName: Ashwin:Spine3
+      position: {x: -0, y: 0.013617547, z: 0.13617548}
+      rotation: {x: -0.03263472, y: 0.0014637669, z: -0.036277145, w: 0.9988077}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Neck1
+      parentName: Ashwin:Neck
+      position: {x: -0, y: 0, z: 0.055383142}
+      rotation: {x: -0.03221237, y: 0.006039801, z: -0.03647659, w: 0.998797}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Head
+      parentName: Ashwin:Neck1
+      position: {x: -0, y: 0, z: 0.055383142}
+      rotation: {x: 0.09900312, y: 0.01702295, z: -0.03482639, w: 0.99433184}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:HeadEnd
+      parentName: Ashwin:Head
+      position: {x: -0, y: 0, z: 0.09146363}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightShoulder
+      parentName: Ashwin:Spine3
+      position: {x: -0, y: 0, z: 0.09532283}
+      rotation: {x: -0.056296416, y: -0.7282028, z: -0.05264828, w: 0.68101364}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightArm
+      parentName: Ashwin:RightShoulder
+      position: {x: -0, y: 0, z: 0.17264025}
+      rotation: {x: 0.08488552, y: -0.023693165, z: 0.28709453, w: 0.9538395}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightForeArm
+      parentName: Ashwin:RightArm
+      position: {x: -0, y: 0, z: 0.30241212}
+      rotation: {x: -0.023157723, y: 0.0051434315, z: -0.07655049, w: 0.99678344}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHand
+      parentName: Ashwin:RightForeArm
+      position: {x: -0, y: 0, z: 0.23764141}
+      rotation: {x: -0.041714616, y: 0.15256199, z: 0.004617432, w: 0.98740244}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandMiddle1
+      parentName: Ashwin:RightHand
+      position: {x: -0, y: 0, z: 0.08996801}
+      rotation: {x: 0.00041814506, y: -0.069271065, z: 0.0008465584, w: 0.99759746}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandMiddle2
+      parentName: Ashwin:RightHandMiddle1
+      position: {x: -0, y: 0, z: 0.04784767}
+      rotation: {x: -0.000001028616, y: -0.027095813, z: 0.000000042884462, w: 0.99963284}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandMiddle3
+      parentName: Ashwin:RightHandMiddle2
+      position: {x: -0, y: 0, z: 0.03209537}
+      rotation: {x: -0.000000744208, y: -0.031586178, z: 0.0000003531188, w: 0.99950105}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandMiddle4
+      parentName: Ashwin:RightHandMiddle3
+      position: {x: -0, y: 0, z: 0.017984623}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandRing
+      parentName: Ashwin:RightHand
+      position: {x: -0.0025191512, y: -0.011665798, z: 0.0025191512}
+      rotation: {x: 0.07158327, y: -0.015840625, z: -0.1011358, w: 0.9921676}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandRing1
+      parentName: Ashwin:RightHandRing
+      position: {x: -0, y: 0, z: 0.079323955}
+      rotation: {x: -0.061183, y: -0.059177734, z: -0.024463234, w: 0.9960704}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandRing2
+      parentName: Ashwin:RightHandRing1
+      position: {x: -0, y: 0, z: 0.0441369}
+      rotation: {x: 0.00000017136325, y: -0.021103198, z: -0.0000002686864, w: 0.9997773}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandRing3
+      parentName: Ashwin:RightHandRing2
+      position: {x: -0, y: 0, z: 0.031297352}
+      rotation: {x: 0.00000016739601, y: -0.03451381, z: 0.00000007208698, w: 0.99940425}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandRing4
+      parentName: Ashwin:RightHandRing3
+      position: {x: -0, y: 0, z: 0.017881265}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandPinky
+      parentName: Ashwin:RightHandRing
+      position: {x: -0.0025191512, y: -0.011665798, z: 0.0025191512}
+      rotation: {x: 0.0058138776, y: -0.0068635824, z: -0.06298593, w: 0.9979739}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandPinky1
+      parentName: Ashwin:RightHandPinky
+      position: {x: -0, y: 0, z: 0.06543463}
+      rotation: {x: 0.0009546089, y: -0.025329873, z: 0.0055089276, w: 0.9996636}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandPinky2
+      parentName: Ashwin:RightHandPinky1
+      position: {x: -0, y: 0, z: 0.037063673}
+      rotation: {x: 0.0000014288805, y: -0.024470232, z: -0.00000027371766, w: 0.9997006}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandPinky3
+      parentName: Ashwin:RightHandPinky2
+      position: {x: -0, y: 0, z: 0.023943963}
+      rotation: {x: 0, y: -0.21177162, z: -0, w: 0.9773192}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandPinky4
+      parentName: Ashwin:RightHandPinky3
+      position: {x: -0, y: 0, z: 0.016496241}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandIndex
+      parentName: Ashwin:RightHand
+      position: {x: -0.0025191512, y: 0.011665798, z: 0.0025191512}
+      rotation: {x: -0.109719194, y: -0.0047970405, z: -0.06899797, w: 0.9915533}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandIndex1
+      parentName: Ashwin:RightHandIndex
+      position: {x: -0, y: 0, z: 0.08673348}
+      rotation: {x: 0.13376693, y: -0.32836738, z: 0.047036327, w: 0.9338463}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandIndex2
+      parentName: Ashwin:RightHandIndex1
+      position: {x: -0, y: 0, z: 0.047215972}
+      rotation: {x: 0, y: -0.43905944, z: -0, w: 0.898458}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandIndex3
+      parentName: Ashwin:RightHandIndex2
+      position: {x: -0, y: 0, z: 0.028215714}
+      rotation: {x: 0, y: -0.13278164, z: -0, w: 0.9911454}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandIndex4
+      parentName: Ashwin:RightHandIndex3
+      position: {x: -0, y: 0, z: 0.016351538}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandThumb1
+      parentName: Ashwin:RightHandIndex
+      position: {x: -0.007557454, y: 0.011665798, z: 0.0025191512}
+      rotation: {x: -0.045013998, y: 0.25831693, z: 0.61089134, w: 0.7470327}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandThumb2
+      parentName: Ashwin:RightHandThumb1
+      position: {x: -0, y: 0, z: 0.056378383}
+      rotation: {x: -0.0012518722, y: -0.03858295, z: -0.0003271288, w: 0.99925464}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandThumb3
+      parentName: Ashwin:RightHandThumb2
+      position: {x: -0, y: 0, z: 0.039078884}
+      rotation: {x: -0.00000060442807, y: -0.040132042, z: -0.00000014444224, w: 0.9991944}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightHandThumb4
+      parentName: Ashwin:RightHandThumb3
+      position: {x: -0, y: 0, z: 0.022398092}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftShoulder
+      parentName: Ashwin:Spine3
+      position: {x: -0, y: 0, z: 0.09532283}
+      rotation: {x: -0.07071655, y: 0.7211305, z: 0.06726082, w: 0.6858907}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftArm
+      parentName: Ashwin:LeftShoulder
+      position: {x: -0, y: 0, z: 0.17264025}
+      rotation: {x: 0.082255945, y: -0.020288516, z: -0.13670494, w: 0.98698235}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftForeArm
+      parentName: Ashwin:LeftArm
+      position: {x: -0, y: 0, z: 0.30241212}
+      rotation: {x: -0.022293739, y: -0.010290372, z: -0.025957257, w: 0.9993615}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHand
+      parentName: Ashwin:LeftForeArm
+      position: {x: -0, y: 0, z: 0.23764141}
+      rotation: {x: -0.06200224, y: -0.09226435, z: -0.0057563684, w: 0.9937857}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandMiddle1
+      parentName: Ashwin:LeftHand
+      position: {x: -0, y: 0, z: 0.08956885}
+      rotation: {x: 0.0024385503, y: 0.07035715, z: -0.004216424, w: 0.99751}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandMiddle2
+      parentName: Ashwin:LeftHandMiddle1
+      position: {x: -0, y: 0, z: 0.047723938}
+      rotation: {x: -0.00000042119018, y: 0.029690025, z: -0.0000000026775495, w: 0.9995592}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandMiddle3
+      parentName: Ashwin:LeftHandMiddle2
+      position: {x: -0, y: 0, z: 0.03194685}
+      rotation: {x: -0.0000026298078, y: 0.033844583, z: -0.00000027020334, w: 0.9994272}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandMiddle4
+      parentName: Ashwin:LeftHandMiddle3
+      position: {x: -0, y: 0, z: 0.01801877}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandRing
+      parentName: Ashwin:LeftHand
+      position: {x: 0.0025191512, y: -0.010878052, z: 0.0025191512}
+      rotation: {x: 0.06899857, y: 0.012717951, z: 0.08340051, w: 0.9940432}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandRing1
+      parentName: Ashwin:LeftHandRing
+      position: {x: -0, y: 0, z: 0.07910889}
+      rotation: {x: -0.05665464, y: 0.06207723, z: 0.019797364, w: 0.9962654}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandRing2
+      parentName: Ashwin:LeftHandRing1
+      position: {x: -0, y: 0, z: 0.044052985}
+      rotation: {x: 0.00000019371495, y: 0.024849862, z: 0.00000006612385, w: 0.9996912}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandRing3
+      parentName: Ashwin:LeftHandRing2
+      position: {x: -0, y: 0, z: 0.03110621}
+      rotation: {x: 0.0000027095455, y: 0.036456656, z: 0.000000235009, w: 0.9993352}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandRing4
+      parentName: Ashwin:LeftHandRing3
+      position: {x: -0, y: 0, z: 0.017915213}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandPinky
+      parentName: Ashwin:LeftHandRing
+      position: {x: 0.0025191512, y: -0.010878052, z: 0.0025191512}
+      rotation: {x: 0.0091065755, y: 0.008351815, z: 0.07114984, w: 0.99738914}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandPinky1
+      parentName: Ashwin:LeftHandPinky
+      position: {x: -0, y: 0, z: 0.065319486}
+      rotation: {x: 0.0017524302, y: 0.02749943, z: -0.0067187506, w: 0.99959767}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandPinky2
+      parentName: Ashwin:LeftHandPinky1
+      position: {x: -0, y: 0, z: 0.03694938}
+      rotation: {x: 0.0000010506474, y: 0.027644902, z: 0.00000023457667, w: 0.9996179}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandPinky3
+      parentName: Ashwin:LeftHandPinky2
+      position: {x: -0, y: 0, z: 0.024028465}
+      rotation: {x: 0, y: 0.19469127, z: -0, w: 0.9808646}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandPinky4
+      parentName: Ashwin:LeftHandPinky3
+      position: {x: -0, y: 0, z: 0.016527561}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandIndex
+      parentName: Ashwin:LeftHand
+      position: {x: 0.0025191512, y: 0.010878052, z: 0.0025191512}
+      rotation: {x: -0.10635257, y: 0.0057916115, z: 0.05932734, w: 0.9925401}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandIndex1
+      parentName: Ashwin:LeftHandIndex
+      position: {x: -0, y: 0, z: 0.08660667}
+      rotation: {x: 0.12985386, y: 0.31405813, z: -0.043408792, w: 0.9394792}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandIndex2
+      parentName: Ashwin:LeftHandIndex1
+      position: {x: -0, y: 0, z: 0.04711569}
+      rotation: {x: 0, y: 0.36849758, z: -0, w: 0.92962873}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandIndex3
+      parentName: Ashwin:LeftHandIndex2
+      position: {x: -0, y: 0, z: 0.028194077}
+      rotation: {x: 0, y: 0.10583808, z: -0, w: 0.9943834}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandIndex4
+      parentName: Ashwin:LeftHandIndex3
+      position: {x: -0, y: 0, z: 0.016382582}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandThumb1
+      parentName: Ashwin:LeftHandIndex
+      position: {x: 0.007557454, y: 0.010878052, z: 0.0025191512}
+      rotation: {x: -0.07956672, y: -0.24496026, z: -0.5978066, w: 0.75913835}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandThumb2
+      parentName: Ashwin:LeftHandThumb1
+      position: {x: -0, y: 0, z: 0.056792516}
+      rotation: {x: 0.00913595, y: 0.037702933, z: -0.002140456, w: 0.9992449}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandThumb3
+      parentName: Ashwin:LeftHandThumb2
+      position: {x: -0, y: 0, z: 0.038900238}
+      rotation: {x: -0.0000013085071, y: 0.04015097, z: -0.00000016263206, w: 0.99919367}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftHandThumb4
+      parentName: Ashwin:LeftHandThumb3
+      position: {x: -0, y: 0, z: 0.022440616}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightUpLeg
+      parentName: Ashwin:Hips
+      position: {x: -0.114524804, y: 0, z: 0}
+      rotation: {x: -0.11302669, y: -0.018563325, z: 0.041567963, w: 0.99254847}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightLeg
+      parentName: Ashwin:RightUpLeg
+      position: {x: -0, y: 0, z: -0.4162045}
+      rotation: {x: -0.057455797, y: 0, z: -0, w: 0.99834806}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightFoot
+      parentName: Ashwin:RightLeg
+      position: {x: -0, y: 0, z: -0.43608677}
+      rotation: {x: -0.031309735, y: 0.0019200472, z: 0.046789154, w: 0.99841213}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightToeBase
+      parentName: Ashwin:RightFoot
+      position: {x: -0, y: 0.13911158, z: 0}
+      rotation: {x: 0.18635646, y: -0, z: -0, w: 0.98248225}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:RightToeBaseEnd
+      parentName: Ashwin:RightToeBase
+      position: {x: -0, y: 0.06632456, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftUpLeg
+      parentName: Ashwin:Hips
+      position: {x: 0.114524804, y: 0, z: 0}
+      rotation: {x: -0.080237634, y: 0.0062370226, z: -0.067680314, w: 0.9944558}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftLeg
+      parentName: Ashwin:LeftUpLeg
+      position: {x: -0, y: 0, z: -0.4162045}
+      rotation: {x: -0.061509654, y: 0, z: -0, w: 0.9981065}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftFoot
+      parentName: Ashwin:LeftLeg
+      position: {x: -0, y: 0, z: -0.43608677}
+      rotation: {x: -0.0036728026, y: -0.024390414, z: -0.027325237, w: 0.99932224}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftToeBase
+      parentName: Ashwin:LeftFoot
+      position: {x: -0, y: 0.13911158, z: 0}
+      rotation: {x: 0.083131835, y: -0, z: -0, w: 0.9965386}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:LeftToeBaseEnd
+      parentName: Ashwin:LeftToeBase
+      position: {x: -0, y: 0.060460236, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Ashwin:Position
+      parentName: Ashwin
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Unlabeled_Markers
+      parentName: Oldman_Fall(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Unlabeled_Markers:_2
+      parentName: Unlabeled_Markers
+      position: {x: 0.28168806, y: 0.4344289, z: 0.26831782}
+      rotation: {x: 0, y: -0, z: -0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 3
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

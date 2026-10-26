@@ -227,83 +227,6 @@ MonoBehaviour:
   installationRoutineCheckpoint:
     _installationRoutineId: 2063f481-1b63-4eda-9ee8-a00df98536bc
     _installationVariants: []
---- !u!1 &75552188
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 75552190}
-  - component: {fileID: 75552189}
-  m_Layer: 0
-  m_Name: FigureStress
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &75552189
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 75552188}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91e26070207cbb9479cee63ee63e8b0f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FigureStress
-  prefab: {fileID: 1257184051020232970, guid: 0d607082cad4a6845988ad29c6bff0de, type: 3}
-  clips:
-  - label: kneeling
-    clip: {fileID: -203655887218126122, guid: ff6de960088c4d0682d1f47712d165f8, type: 3}
-    loop: 0
-  - label: looking up
-    clip: {fileID: -203655887218126122, guid: e8512c16b9427224b9a04d3cebc196d7, type: 3}
-    loop: 0
-  - label: lying in pain
-    clip: {fileID: -203655887218126122, guid: 5c3e079724d14e36a5f3f92563161f0f, type: 3}
-    loop: 1
-  - label: old man walk
-    clip: {fileID: -203655887218126122, guid: 72d61867c4b0d5d499da1d649bbf7e91, type: 3}
-    loop: 1
-  - label: pick up
-    clip: {fileID: -203655887218126122, guid: 8041b071a57dd9348b7b41a077118421, type: 3}
-    loop: 0
-  - label: standing idle 1
-    clip: {fileID: -203655887218126122, guid: 75e4fc248632fb042802e89a518f067f, type: 3}
-    loop: 1
-  - label: standing idle 2
-    clip: {fileID: -203655887218126122, guid: 72b9f92aca1c7b74bb7116046312e775, type: 3}
-    loop: 1
-  - label: standing idle 3
-    clip: {fileID: -203655887218126122, guid: 255601ee64af86648bf923c7a11af064, type: 3}
-    loop: 1
-  - label: walking medium pace
-    clip: {fileID: -203655887218126122, guid: e8f862f43a7796b429389559649e2f1d, type: 3}
-    loop: 1
-  steps: 04000000080000000c000000100000001800000020000000
-  stepSeconds: 15
-  firstDelay: 10
-  runInEditor: 0
---- !u!4 &75552190
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 75552188}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.28315, y: -0, z: 4.14983}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &186643001
 GameObject:
   m_ObjectHideFlags: 0
@@ -1488,7 +1411,7 @@ MonoBehaviour:
   _monoscopic: 0
   _sharpenType: 0
   _disableRecording: 0
-  _enableDynamicResolution: 1
+  _enableDynamicResolution: 0
   minDynamicResolutionScale: 1
   maxDynamicResolutionScale: 1
   quest2MinDynamicResolutionScale: 0.7
@@ -1851,4 +1774,3 @@ SceneRoots:
   - {fileID: 1791755792}
   - {fileID: 614997648}
   - {fileID: 574630718}
-  - {fileID: 75552190}

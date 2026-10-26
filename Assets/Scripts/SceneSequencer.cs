@@ -18,17 +18,21 @@ public class SceneSequencer : MonoBehaviour
         public UnityEvent onEnter, onExit;
     }
 
+    // lengths in seconds from the Bystander Event List (2026-10-26): the sum of each scene's beats, 13:35 in all on the longest path
     public Step[] steps =
     {
-        new Step { name = "1 Darkness: chained", autoAdvance = 10f },
-        new Step { name = "2 Darkness: the three events", autoAdvance = 15f, breakWindow = true },
-        new Step { name = "3 Street: darkness lifts", autoAdvance = 12f, breakWindow = true },
-        new Step { name = "4 Cards", autoAdvance = 12f },
-        new Step { name = "5 Darkness: no chains", autoAdvance = 15f },
-        new Step { name = "6 Street again", autoAdvance = 12f },
-        new Step { name = "End" },
+        new Step { name = "Warning", autoAdvance = 10f },
+        new Step { name = "Tutorial: phrases to your heart", autoAdvance = 75f },          // 25 + 25 + 25
+        new Step { name = "1 Darkness: chained", autoAdvance = 70f },                      // 25 + 45
+        new Step { name = "2 Darkness: the three events", autoAdvance = 135f, breakWindow = true },   // 45 + 40 + 50
+        new Step { name = "3 Street: darkness lifts", autoAdvance = 110f, breakWindow = true },       // 50 + 60
+        new Step { name = "4 Cards", autoAdvance = 80f },                                  // 25 + 40 + 15
+        new Step { name = "5 Darkness: no chains", autoAdvance = 160f },                   // 15 + 50 + 40 + 55
+        new Step { name = "6 Street again", autoAdvance = 115f },                          // 45 + 70
+        new Step { name = "End", autoAdvance = 15f },
+        new Step { name = "Credits", autoAdvance = 45f },
     };
-    public int cardsStep = 3, noChainsStep = 4;   // indices into steps
+    public int cardsStep = 5, noChainsStep = 6;   // indices into steps
     public float fadeTime = 1f;
     public bool showLabel = true;                 // placeholder: the step name low in the view while the scenes are not built
 
@@ -113,7 +117,7 @@ public class SceneSequencer : MonoBehaviour
     {
         if (busy || Index < 0) return;
         var s = steps[Index];
-        if (s.autoAdvance > 0f && (timer += Time.deltaTime) >= s.autoAdvance) Next();
+        if (s.autoAdvance > 0f && Index + 1 < steps.Length && (timer += Time.deltaTime) >= s.autoAdvance) Next();   // the last step (Credits) stays
     }
 
     public void Next() => GoTo(Index + 1);
