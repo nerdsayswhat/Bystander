@@ -23,7 +23,7 @@ public class SceneSequencer : MonoBehaviour
     {
         new Step { name = "Warning", autoAdvance = 10f },
         new Step { name = "Tutorial: phrases to your heart", autoAdvance = 75f },          // 25 + 25 + 25
-        new Step { name = "1 Darkness: chained", autoAdvance = 70f },                      // 25 + 45
+        new Step { name = "1 Darkness: chained", autoAdvance = 34f },                      // author 2026-10-27: first flash at 10 s, scene 2 at 35 s (34 + the 1 s fade); the Event List said 25 + 45
         new Step { name = "2 Darkness: the three events", autoAdvance = 135f, breakWindow = true },   // 45 + 40 + 50
         new Step { name = "3 Street: darkness lifts", autoAdvance = 110f, breakWindow = true },       // 50 + 60
         new Step { name = "4 Cards", autoAdvance = 80f },                                  // 25 + 40 + 15
@@ -33,13 +33,16 @@ public class SceneSequencer : MonoBehaviour
         new Step { name = "Credits", autoAdvance = 45f },
     };
     public int cardsStep = 5, noChainsStep = 6;   // indices into steps
+    public int chainsFromStep = 2;                // the warning and the tutorial (steps 0 and 1) have no chains
+    public int firstPlaceholder = 3;              // steps from here on are not built yet: their name shows low in the view
     public float fadeTime = 1f;
-    public bool showLabel = true;                 // placeholder: the step name low in the view while the scenes are not built
+    public bool showLabel = true;                 // placeholder labels on or off
 
     // what the player did in scene 5, for scene 6 (the scene content sets these)
     public bool gaveOrange, binnedCan, calmedDog;
 
     public int Index { get; private set; } = -1;
+    public bool Busy => busy;                      // a fade is running: the step has been entered but is not yet visible
     public bool ChainsBrokenByPlayer { get; private set; }
     public bool ShowChainsLine => !ChainsBrokenByPlayer;   // scene 4 shows "WERE THE CHAINS REALLY BINDING YOU?" only if they were never broken
 
@@ -48,7 +51,7 @@ public class SceneSequencer : MonoBehaviour
     Transform fadeRoot, labelRoot;
     float timer; bool busy; int pending = -1;   // pending: a jump asked for mid-transition
 
-    const bool AutoSpawn = false;                 // switched off for now: no scene changes while the figures and chains are being tested; set to true to run the film
+    const bool AutoSpawn = true;                  // on 2026-10-26 for the opening (warning, tutorial, scene 1); set to false to test the figures and chains without scene changes
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Spawn()
@@ -140,10 +143,11 @@ public class SceneSequencer : MonoBehaviour
         var s = steps[i];
         if (chains != null)
         {
+            chains.Hidden = i < chainsFromStep;
             chains.armed = s.breakWindow;
             if (i == noChainsStep) chains.Release();      // never broken: they disperse quietly as scene 5 begins (no-op if already broken)
         }
-        label.text = showLabel ? s.name : "";
+        label.text = showLabel && i >= firstPlaceholder ? s.name : "";
         s.onEnter?.Invoke();
         yield return FadeTo(0f);
         busy = false;

@@ -17,7 +17,7 @@ public class ExperienceLog : MonoBehaviour
     public float interval = 0.5f;          // seconds between STATE lines
     public float hitchMs = 22f;            // a frame longer than this is an event
 
-    ChainWrap chain; SceneSequencer sequencer; Spectacle spectacle;
+    ChainWrap chain; SceneSequencer sequencer; Spectacle spectacle; Opening opening;
     Transform head, left, right;
     Grabbable[] grabbables; bool[] held;
     float acc, worst, findTimer; int frames, states, hitches;
@@ -57,6 +57,7 @@ public class ExperienceLog : MonoBehaviour
         if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
         if (sequencer == null) sequencer = FindFirstObjectByType<SceneSequencer>();
         if (spectacle == null) spectacle = FindFirstObjectByType<Spectacle>();
+        if (opening == null) opening = FindFirstObjectByType<Opening>();
     }
 
     void Update()
@@ -108,6 +109,8 @@ public class ExperienceLog : MonoBehaviour
 
         if (spectacle != null)
             sb.Append(" spectacle[on=").Append(spectacle.IsOn ? 1 : 0).Append(" flashes=").Append(spectacle.Flashes).Append(" gaze=").Append(spectacle.GazeAngle.ToString("0")).Append("deg looked=").Append(spectacle.LookedUp ? 1 : 0).Append(" vol=").Append(spectacle.Volume.ToString("0.00")).Append(']');
+
+        if (opening != null && opening.Status != null) sb.Append(" opening[").Append(opening.Status).Append(']');
 
         if (chain != null)
         {

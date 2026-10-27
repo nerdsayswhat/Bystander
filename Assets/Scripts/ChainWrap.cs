@@ -53,6 +53,19 @@ public class ChainWrap : MonoBehaviour
     public float LeftStrain { get; private set; }                 // 0..1
     public float RightStrain { get; private set; }
     public bool Broken { get; private set; }
+
+    bool hidden; ParticleSystemRenderer prend;
+    // the opening (warning, tutorial) has no chains: hidden, the chain is not drawn, does not hold the hands and does not follow
+    public bool Hidden
+    {
+        get => hidden;
+        set
+        {
+            if (hidden && !value && Camera.main != null) body = BodyTarget(Camera.main.transform);   // reappear centred on the player
+            hidden = value;
+            if (prend != null) prend.enabled = !hidden;
+        }
+    }
     // read-only state for ExperienceLog (what the chain is doing, per hand)
     public float LeftResist => left.resist;
     public float RightResist => right.resist;
@@ -133,6 +146,7 @@ public class ChainWrap : MonoBehaviour
         var sh = ps.shape; sh.enabled = false;
         var rend = go.GetComponent<ParticleSystemRenderer>();
         rend.sharedMaterial = particleMaterial != null ? particleMaterial : Resources.Load<Material>("ChainParticle");
+        prend = rend; prend.enabled = !hidden;
         pmat = rend.material;                                         // instance: the shared asset stays untouched
         pmat.SetTexture("_BaseMap", DiscTexture());                   // round and flat, no shading or shadow side; alpha-clipped so it stays opaque
         ps.Play();
@@ -257,6 +271,12 @@ public class ChainWrap : MonoBehaviour
     {
         if (left.links == null) return;
         if (Broken) { Scatter(); return; }
+        if (hidden)
+        {
+            foreach (var s in new[] { left, right }) if (s.synth != null) s.synth.FreeWrist(SyntheticHand.WristLockMode.Position);
+            LeftStrain = RightStrain = left.resist = right.resist = left.hold = right.hold = 0f;
+            return;
+        }
         // the wrap and belt anchors drift after the player, slowly, so they stay centred but still hold the hands
         body = Vector3.Lerp(body, BodyTarget(Camera.main.transform), 1f - Mathf.Exp(-follow * Time.deltaTime));
         left.anchor = body + new Vector3(-beltAnchor.x, topY - beltAnchor.y, beltAnchor.z);
@@ -283,13 +303,13 @@ public class ChainWrap : MonoBehaviour
         return false;
     }
 
-    bool IsFist(Side s)
+    public static bool IsFist(SyntheticHand h, float limit = 0.12f)   // also used by the tutorial's grab
     {
-        if (s.synth == null || !s.synth.IsConnected) return false;
+        if (h == null || !h.IsConnected) return false;
         float sum = 0f; int n = 0;
         foreach (var id in Tips)
-            if (s.synth.GetJointPoseFromWrist(id, out var pose)) { sum += pose.position.magnitude; n++; }
-        return n == Tips.Length && sum / n < fistDistance;
+            if (h.GetJointPoseFromWrist(id, out var pose)) { sum += pose.position.magnitude; n++; }
+        return n == Tips.Length && sum / n < limit;
     }
 
     public void Release() => Break(false);   // chains gone without the event, e.g. entering scene 5
@@ -351,7 +371,7 @@ public class ChainWrap : MonoBehaviour
         var off = real - body; off.y = 0f;
         s.resist = Mathf.InverseLerp(limit * tremorStart, limit + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
         // deliberate reach: pulling past the limit towards a BreakTarget; the chain strains harder the longer it is held
-        s.hold = aimed && strain >= minStrain && (!requireFist || IsFist(s)) ? s.hold + Time.deltaTime : 0f;
+        s.hold = aimed && strain >= minStrain && (!requireFist || IsFist(s.synth, fistDistance)) ? s.hold + Time.deltaTime : 0f;
         s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / holdTime));
         mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, s.resist));
         s.shake = Mathf.Lerp(tremble, trembleTarget, s.aim) * s.resist;

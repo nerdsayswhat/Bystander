@@ -30,7 +30,7 @@ public class Spectacle : MonoBehaviour
     public float maxPerSecond = 2.5f, maxGap = 1.3f;        // photosensitivity: the Event List says under 3 flashes a second
     public float maxScale = 3f;                             // each flash is a random 1 to maxScale times the base size
     public float peak = 0.7f, emission = 6f;               // vertex colour at the brightest (below full) x material brightness (still above the bloom threshold)
-    public float scene1Delay = 24f, testDelay = 4f;         // NOT FINAL (author, 2026-10-26): a second earlier than the 25 s beat 1 and the 5 s test start; judge again once the tutorial is in front of it
+    public float scene1Delay = 9.5f, testDelay = 4f;        // NOT FINAL (author, 2026-10-27): the first flash lands 10 s after the chains appear (this + the 0.5 s first-flash wait); judge on the headset with the tutorial in front of it
     public float lookAngle = 35f, lookDwell = 0.4f;        // "looked up": the head points within lookAngle of the spectacle for lookDwell seconds
     public float nudgeEvery = 6f;                           // not looked yet: the boom gets louder every nudgeEvery seconds
     public AudioClip[] boomClips;                           // the sound for each flash; empty = silent (the synthesized placeholder boom was removed: the same sound every flash got irritating)
