@@ -18,6 +18,9 @@ public class ParticleFigure : MonoBehaviour
     public Material particleMaterial;              // falls back to Resources/ChainParticle (flat discs, alpha clipped)
     public Vector3 position = new Vector3(0f, 0f, 1.5f);   // where the figure stands (world), facing the origin
     public float groundY = 0f;                      // world height of the floor (the tracking origin is the floor); the lowest particle is placed on it
+    public bool playing = true;                     // false: holds the first pose of the clip until it is set to true (a figure that must be in place but not yet moving)
+    public float blendTime = 0.4f;                  // seconds the particles take to ease from the old pose to the new one when Play switches clips (0 = a hard cut)
+    public float brightness = 1f;                   // 0..1 scales the glow; 0 hides the figure (scenes where things are lit only where the player looks)
 
     struct Seg { public HumanBodyBones a, b; public float radius, weight; }
     // limb segments (bone a to bone b) with a thickness; weight shares the particles out by volume
@@ -61,10 +64,12 @@ public class ParticleFigure : MonoBehaviour
 
     public Transform Skeleton { get; private set; }                // the instantiated skeleton (for ExperienceLog; Body is the segment table)
     public int ParticleCount => parts != null ? parts.Length : 0;
+    public Transform Bone(HumanBodyBones b) => animator != null ? animator.GetBoneTransform(b) : null;   // a bone of the live skeleton (e.g. a hand to hand something to)
     public float ClipTime => graph.IsValid() ? clipTime : -1f;
     public float LowestY { get; private set; }                      // height of the lowest particle (for ExperienceLog: 0 means the feet are on the floor)
     float clipTime;
-    PlayableGraph graph; AnimationClipPlayable playable;
+    PlayableGraph graph; AnimationClipPlayable playable; AnimationPlayableOutput aout; Animator animator;
+    ParticleSystemRenderer prend; Material pmat; float lastBrightness = -1f;
     Transform[] bone; Vector3[] local;             // per particle: its bone and its offset in that bone's space
     ParticleSystem ps; ParticleSystem.Particle[] parts;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -84,6 +89,7 @@ public class ParticleFigure : MonoBehaviour
         anim.applyRootMotion = false;
         anim.enabled = true;
         anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;   // the meshes are hidden, and a culled animator never moves its bones (it stays in the T-pose)
+        animator = anim;
 
         if (clip == null) Debug.LogWarning("ParticleFigure: no clip assigned, the figure will stay in the T-pose");
         else
@@ -93,8 +99,8 @@ public class ParticleFigure : MonoBehaviour
             graph = PlayableGraph.Create("ParticleFigure");
             graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);   // Update sets the time and evaluates the graph itself, so the pose is certain before the particles read the bones
             playable = AnimationClipPlayable.Create(graph, clip);
-            var output = AnimationPlayableOutput.Create(graph, "anim", anim);
-            output.SetSourcePlayable(playable);
+            aout = AnimationPlayableOutput.Create(graph, "anim", anim);
+            aout.SetSourcePlayable(playable);
             graph.Evaluate(0f);                             // the bones take the clip's first pose before the particles are bound
             var hips = anim.GetBoneTransform(HumanBodyBones.Hips);   // mocap carries the performer's studio position: start the clip with the hips over the figure's position
             if (hips != null) Skeleton.position += new Vector3(position.x - hips.position.x, 0f, position.z - hips.position.z);
@@ -157,17 +163,41 @@ public class ParticleFigure : MonoBehaviour
         var main = ps.main; main.simulationSpace = ParticleSystemSimulationSpace.World; main.playOnAwake = false; main.maxParticles = parts.Length;
         var em = ps.emission; em.enabled = false;
         var sh = ps.shape; sh.enabled = false;
-        var rend = go.GetComponent<ParticleSystemRenderer>();
-        rend.sharedMaterial = particleMaterial != null ? particleMaterial : Resources.Load<Material>("ChainParticle");
-        var mat = rend.material;
-        mat.SetColor(BaseColor, Color.white * emission);
-        mat.SetTexture("_BaseMap", DiscTexture());
+        prend = go.GetComponent<ParticleSystemRenderer>();
+        prend.sharedMaterial = particleMaterial != null ? particleMaterial : Resources.Load<Material>("ChainParticle");
+        pmat = prend.material;
+        pmat.SetColor(BaseColor, Color.white * emission * brightness);
+        pmat.SetTexture("_BaseMap", DiscTexture());
         ps.Play();
+    }
+
+    // switch to another clip (a fall, then reaching on the ground, then a dismissive wave): the new clip starts where the figure is,
+    // with its hips over the hips of the pose it replaces. A hard cut, no blend.
+    Vector3[] blendFrom; float blend = 1f;
+    public void Play(AnimationClip next, bool loopIt = true)
+    {
+        if (next == null || !graph.IsValid()) return;
+        if (blendTime > 0f && parts != null)               // remember where every particle is now; LateUpdate eases from there
+        {
+            if (blendFrom == null || blendFrom.Length != parts.Length) blendFrom = new Vector3[parts.Length];
+            for (int i = 0; i < parts.Length; i++) blendFrom[i] = parts[i].position;
+            blend = 0f;
+        }
+        var hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+        var keep = hips.position;
+        var old = playable;
+        playable = AnimationClipPlayable.Create(graph, next);
+        aout.SetSourcePlayable(playable);
+        old.Destroy();
+        clip = next; loop = loopIt; clipTime = 0f; playing = true;
+        playable.SetTime(0.0);
+        graph.Evaluate(0f);
+        Skeleton.position += new Vector3(keep.x - hips.position.x, 0f, keep.z - hips.position.z);
     }
 
     void Update()
     {
-        if (clip == null || !graph.IsValid()) return;
+        if (clip == null || !graph.IsValid() || !playing) return;
         float len = Mathf.Max(clip.length, 0.01f);
         clipTime = loop ? (clipTime + Time.deltaTime) % len : Mathf.Min(clipTime + Time.deltaTime, len);   // loops, or plays once and holds the last pose
         playable.SetTime(clipTime);
@@ -181,8 +211,20 @@ public class ParticleFigure : MonoBehaviour
         for (int i = 0; i < parts.Length; i++) { parts[i].position = bone[i].TransformPoint(local[i]); low = Mathf.Min(low, parts[i].position.y); }
         float lift = groundY + particleSize * 0.5f - low;   // keep the lowest particle on the floor every frame: kneeling and lying clips touch the ground instead of floating
         for (int i = 0; i < parts.Length; i++) parts[i].position += Vector3.up * lift;
+        if (blend < 1f)                                     // a clip switch: ease every particle from where it was to where the new pose puts it
+        {
+            blend = Mathf.Min(1f, blend + Time.deltaTime / Mathf.Max(blendTime, 0.01f));
+            float k = Mathf.SmoothStep(0f, 1f, blend);
+            for (int i = 0; i < parts.Length; i++) parts[i].position = Vector3.Lerp(blendFrom[i], parts[i].position, k);
+        }
         LowestY = -lift;                                    // how far the clip itself had lifted the figure (0 = feet on the floor)
         ps.SetParticles(parts, parts.Length);
+        if (!Mathf.Approximately(brightness, lastBrightness))
+        {
+            lastBrightness = brightness;
+            prend.enabled = brightness > 0.002f;
+            pmat.SetColor(BaseColor, Color.white * emission * brightness);
+        }
     }
 
     void OnDestroy() { if (graph.IsValid()) graph.Destroy(); }

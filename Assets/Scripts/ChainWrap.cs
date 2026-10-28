@@ -36,6 +36,7 @@ public class ChainWrap : MonoBehaviour
 
     public bool armed = true;                                     // the sequencer switches this off outside the break window
     public float holdTime = 1.5f;                                  // seconds of deliberate grab (fist while pulling) to break
+    public float reachNear = 0.3f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (a hand hanging at the hip is 0.4 m or more above a floor orange; bending down to one gets within 0.2 m)
     public float reachAngle = 35f;                                // degrees: the pull must point this close to a BreakTarget
     public bool requireFist = false;                              // also demand a closed hand (see fistDistance)
     public float fistDistance = 0.12f;                            // mean fingertip distance from the wrist (m) below which the hand counts as closed
@@ -61,7 +62,7 @@ public class ChainWrap : MonoBehaviour
         get => hidden;
         set
         {
-            if (hidden && !value && Camera.main != null) body = BodyTarget(Camera.main.transform);   // reappear centred on the player
+            if (hidden && !value && Camera.main != null) { body = BodyTarget(Camera.main.transform); yaw = Camera.main.transform.eulerAngles.y; }   // reappear centred on the player, facing the way they face
             hidden = value;
             if (prend != null) prend.enabled = !hidden;
         }
@@ -76,7 +77,7 @@ public class ChainWrap : MonoBehaviour
     public float LeftShake => left.shake;
     public float RightShake => right.shake;
 
-    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f; }
+    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f, dist, lim, fwd, ang; public bool fist; }
     static readonly HandJointId[] Tips = { HandJointId.HandIndexTip, HandJointId.HandMiddleTip, HandJointId.HandRingTip, HandJointId.HandPinkyTip };
     struct Src { public Transform t; public int n, group; public float y; public bool thick; }   // a ring of particles around a link or cuff
     Material pmat; Src[] srcs; ParticleSystem ps; ParticleSystem.Particle[] parts; Vector3[] vel; float[] size; float brokenAt;
@@ -84,7 +85,7 @@ public class ChainWrap : MonoBehaviour
     MaterialPropertyBlock mpb;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");   // URP Unlit colour (Assets/Materials/ChainLink.mat)
     Transform[] torso; Renderer[] torsoR; Vector3[] torsoOff;   // torso links and their offsets from the body centre
-    Vector3 body; float topY;                                    // smoothed body centre (XZ) and head height at start
+    Vector3 body; float topY, yaw;                               // smoothed body centre (XZ), head height at start, and smoothed body heading (degrees)
 
     IEnumerator Start()
     {
@@ -112,6 +113,7 @@ public class ChainWrap : MonoBehaviour
 
         topY = head.position.y;
         body = BodyTarget(head);
+        yaw = head.eulerAngles.y;
         BuildTorso();
         foreach (var s in new[] { left, right })
         {
@@ -279,8 +281,10 @@ public class ChainWrap : MonoBehaviour
         }
         // the wrap and belt anchors drift after the player, slowly, so they stay centred but still hold the hands
         body = Vector3.Lerp(body, BodyTarget(Camera.main.transform), 1f - Mathf.Exp(-follow * Time.deltaTime));
-        left.anchor = body + new Vector3(-beltAnchor.x, topY - beltAnchor.y, beltAnchor.z);
-        right.anchor = body + new Vector3(beltAnchor.x, topY - beltAnchor.y, beltAnchor.z);
+        yaw = Mathf.LerpAngle(yaw, Camera.main.transform.eulerAngles.y, 1f - Mathf.Exp(-follow * Time.deltaTime));   // the belt turns with the player: left stays on the player's left whichever way they face
+        var turn = Quaternion.Euler(0f, yaw, 0f);
+        left.anchor = body + turn * new Vector3(-beltAnchor.x, 0f, beltAnchor.z) + Vector3.up * (topY - beltAnchor.y);
+        right.anchor = body + turn * new Vector3(beltAnchor.x, 0f, beltAnchor.z) + Vector3.up * (topY - beltAnchor.y);
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
         if (left.hold >= holdTime || right.hold >= holdTime) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
@@ -295,12 +299,27 @@ public class ChainWrap : MonoBehaviour
         FillParticles();
     }
 
-    // is the hand being pulled towards a BreakTarget? dir runs from the belt anchor out to the real hand
-    bool AimedAtTarget(Vector3 from, Vector3 dir)
+    // distance (m) from p to the closest BreakTarget
+    static float NearestTarget(Vector3 p)
     {
-        foreach (var t in BreakTarget.All)
-            if (Vector3.Angle(dir, t.transform.position - from) < reachAngle) return true;
-        return false;
+        float m = 99f;
+        foreach (var t in BreakTarget.All) m = Mathf.Min(m, Vector3.Distance(p, t.transform.position));
+        return m;
+    }
+
+    // smallest angle (degrees) between the pull (dir runs from the belt anchor out to the real hand) and the direction to a BreakTarget
+    float MinAngle(Vector3 from, Vector3 dir)
+    {
+        float m = 180f;
+        foreach (var t in BreakTarget.All) m = Mathf.Min(m, Vector3.Angle(dir, t.transform.position - from));
+        return m;
+    }
+
+    // one line of numbers per hand for the development log: why a hand does or does not count as reaching
+    public string Describe(bool leftHand)
+    {
+        var s = leftHand ? left : right;
+        return $"dist {s.dist:0.00} limit {s.lim:0.00} strain {(s.dist > s.lim ? (s.dist - s.lim) / pullRange : 0f):0.00} near {s.fwd:0.00} angle {s.ang:0} fist {(s.fist ? 1 : 0)} aim {s.aim:0.0} hold {s.hold:0.00} anchor ({s.anchor.x:0.00},{s.anchor.y:0.00},{s.anchor.z:0.00}) hand ({(s.hand != null ? s.hand.position.x : 0f):0.00},{(s.hand != null ? s.hand.position.y : 0f):0.00},{(s.hand != null ? s.hand.position.z : 0f):0.00})";
     }
 
     public static bool IsFist(SyntheticHand h, float limit = 0.12f)   // also used by the tutorial's grab
@@ -317,6 +336,7 @@ public class ChainWrap : MonoBehaviour
     public void Break(bool fireEvent = true)
     {
         if (Broken || left.links == null) return;
+        Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} chain break snapshot yaw {yaw:0} body ({body.x:0.00},{body.y:0.00},{body.z:0.00}) | L {Describe(true)} | R {Describe(false)}");
         Broken = true; brokenAt = Time.time;
         Debug.Log($"ChainWrap: chain broken at {Time.time:0.00}s (fireEvent {fireEvent})");   // lines this up with a trace in logcat
         foreach (var s in new[] { left, right })
@@ -353,9 +373,11 @@ public class ChainWrap : MonoBehaviour
         var real = s.hand.position;
         var d = real - s.anchor;
         float dist = d.magnitude, strain = 0f;
-        bool aimed = armed && AimedAtTarget(s.anchor, d);
+        // a reach is out in front: a hand down at the hip or behind the back points at the floor oranges too, but is not reaching
+        s.fwd = NearestTarget(real); s.ang = MinAngle(s.anchor, d);
+        bool aimed = armed && s.fwd < reachNear && s.ang < reachAngle;
         s.aim = Mathf.MoveTowards(s.aim, aimed ? 1f : 0f, Time.deltaTime * 6f);   // blend (shake, stretch) so nothing jumps
-        float limit = reach + stretch * s.aim;                       // the chain stretches a little when, and only when, reaching for the object
+        float limit = reach + stretch * s.aim; s.dist = dist; s.lim = limit; s.fist = IsFist(s.synth, fistDistance);                       // the chain stretches a little when, and only when, reaching for the object
         var end = real;
         if (dist > limit)
         {

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -17,9 +18,10 @@ public class ExperienceLog : MonoBehaviour
     public float interval = 0.5f;          // seconds between STATE lines
     public float hitchMs = 22f;            // a frame longer than this is an event
 
-    ChainWrap chain; SceneSequencer sequencer; Spectacle spectacle; Opening opening;
+    ChainWrap chain; SceneSequencer sequencer; Spectacle spectacle; Opening opening; OldManScene oldMan;
     Transform head, left, right;
     Grabbable[] grabbables; bool[] held;
+    StreamWriter file; float chainAt;
     float acc, worst, findTimer; int frames, states, hitches;
     bool wasBroken, wasArmed = true;
     readonly bool[] aimedBefore = new bool[2], pastLimitBefore = new bool[2];
@@ -33,6 +35,14 @@ public class ExperienceLog : MonoBehaviour
     {
         if (Application.isEditor && !InEditor) { enabled = false; return; }
         Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);   // one line per entry: no code trace after every log line
+        // the same lines go to a file on the headset, so they survive logcat rolling over: adb pull /sdcard/Android/data/<package>/files/bystander_log.txt
+        try
+        {
+            file = new StreamWriter(Path.Combine(Application.persistentDataPath, "bystander_log.txt"), true) { AutoFlush = true };
+            file.WriteLine($"==== run {System.DateTime.Now:yyyy-MM-dd HH:mm:ss} ====");
+            Application.logMessageReceived += (msg, _, __) => { if (msg.StartsWith(Tag)) file.WriteLine(msg); };
+        }
+        catch (System.Exception e) { Debug.LogWarning("ExperienceLog: no log file: " + e.Message); }
         grabbables = FindObjectsByType<Grabbable>(FindObjectsSortMode.None);
         held = new bool[grabbables.Length];
         for (int i = 0; i < grabbables.Length; i++)
@@ -58,6 +68,7 @@ public class ExperienceLog : MonoBehaviour
         if (sequencer == null) sequencer = FindFirstObjectByType<SceneSequencer>();
         if (spectacle == null) spectacle = FindFirstObjectByType<Spectacle>();
         if (opening == null) opening = FindFirstObjectByType<Opening>();
+        if (oldMan == null) oldMan = FindFirstObjectByType<OldManScene>();
     }
 
     void Update()
@@ -82,6 +93,11 @@ public class ExperienceLog : MonoBehaviour
         if (chain == null) return;
         if (chain.Broken != wasBroken) { wasBroken = chain.Broken; LogEvent($"chain {(wasBroken ? "BROKEN" : "restored")}"); }
         if (chain.armed != wasArmed) { wasArmed = chain.armed; LogEvent($"chain armed={wasArmed}"); }
+        if (chain.armed && !chain.Broken && Time.time >= chainAt && (chain.LeftHold > 0f || chain.RightHold > 0f || chain.LeftStrain > 0f || chain.RightStrain > 0f))
+        {
+            chainAt = Time.time + 0.1f;                                    // 10 Hz while a hand is at the chain limit or holding: the lead-up to a break
+            LogEvent($"chain pull | L {chain.Describe(true)} | R {chain.Describe(false)}");
+        }
         for (int i = 0; i < 2; i++)
         {
             string hand = i == 0 ? "L" : "R";
@@ -111,6 +127,7 @@ public class ExperienceLog : MonoBehaviour
             sb.Append(" spectacle[on=").Append(spectacle.IsOn ? 1 : 0).Append(" flashes=").Append(spectacle.Flashes).Append(" gaze=").Append(spectacle.GazeAngle.ToString("0")).Append("deg looked=").Append(spectacle.LookedUp ? 1 : 0).Append(" vol=").Append(spectacle.Volume.ToString("0.00")).Append(']');
 
         if (opening != null && opening.Status != null) sb.Append(" opening[").Append(opening.Status).Append(']');
+        if (oldMan != null && oldMan.Status != null) sb.Append(" oldman[").Append(oldMan.Status).Append(']');
 
         if (chain != null)
         {

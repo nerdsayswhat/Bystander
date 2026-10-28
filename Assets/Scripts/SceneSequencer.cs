@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 // Runs the film: the six scenes in order, a fade to black between them, and the chain-break shortcut.
@@ -34,7 +35,7 @@ public class SceneSequencer : MonoBehaviour
     };
     public int cardsStep = 5, noChainsStep = 6;   // indices into steps
     public int chainsFromStep = 2;                // the warning and the tutorial (steps 0 and 1) have no chains
-    public int firstPlaceholder = 3;              // steps from here on are not built yet: their name shows low in the view
+    public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public bool showLabel = true;                 // placeholder labels on or off
 
@@ -90,7 +91,11 @@ public class SceneSequencer : MonoBehaviour
         label.alignment = TextAnchor.MiddleCenter;
         label.color = Color.white;
 
-        GoTo(0);
+        // a scene opened on its own starts at its own step: Scene 2.unity begins at "2 Darkness: the three events"
+        int first = 0;
+        if (SceneManager.GetActiveScene().name == "Scene 2")
+            for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("2")) { first = i; break; }
+        GoTo(first);
     }
 
     static Canvas NewCanvas(string name, float size, int sorting)
@@ -124,6 +129,8 @@ public class SceneSequencer : MonoBehaviour
     }
 
     public void Next() => GoTo(Index + 1);
+    public void GoToCards() => GoTo(cardsStep);
+    public bool deferBreak;                       // scene content sets this while it wants the player to act after the chains break (give the orange to the old man); it then calls GoToCards() itself
 
     public void GoTo(int i)
     {
@@ -170,6 +177,7 @@ public class SceneSequencer : MonoBehaviour
     void OnBroken()
     {
         ChainsBrokenByPlayer = true;
+        if (deferBreak) return;                      // the scene lets the player act first and calls GoToCards() when it is done
         if (busy) { pending = cardsStep; return; }   // a transition is running: jump when it ends
         if (Index >= 0 && steps[Index].breakWindow) GoTo(cardsStep);
     }
