@@ -26,7 +26,7 @@ public class OldManScene : MonoBehaviour
     public Color orange = new Color(1f, 0.32f, 0.03f);      // x orangeEmission: (1.6, 0.5, 0.05), which clips to orange on the headset and blooms like the figure's particles
     public float orangeEmission = 1.6f;
     public Color bag = new Color(0.55f, 0.22f, 0.04f);      // placeholder bag: a dimmer brown cylinder lying on its side
-    public float litInner = 20f, litOuter = 50f;            // degrees from where the head points: fully lit inside, dark outside
+    public float litFull = 35f, litFade = 75f;            // degrees from where the head points: fully lit inside, dark outside
     public float dismissAfterLook = 2f, dismissLatest = 25f;   // "Don't bother": after this long looking at him (and at least 6 s after the fall), or this long after the fall at the latest
     public float oldManLeft = 65f, oldManAt = 0.85f;       // where he lies: degrees left of where the head pointed as the beat began, and metres away
     public float bagLeft = 50f, bagAt = 0.7f;
@@ -63,7 +63,7 @@ public class OldManScene : MonoBehaviour
             if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
             if (head == null && Camera.main != null) head = Camera.main.transform;
         }
-        bool want = seq != null && head != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("2");
+        bool want = !SceneSequencer.TestBeat3Only && seq != null && head != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("2");
         if (want && phase == Phase.Idle && !seq.Busy) Begin();
         if (!want && phase != Phase.Idle) { End(); return; }
         if (phase == Phase.Idle) return;
@@ -236,7 +236,7 @@ public class OldManScene : MonoBehaviour
                 else o.tr.position = o.hand.position;
             }
         }
-        if (!toCards && ((given && list.Exists(x => x.arrived) && t >= givenAt + afterGive) || (!given && t >= freedAt + freedTimeout)))
+        if (!toCards && ((given && list.Exists(x => x.arrived) && t >= givenAt + afterGive) || (!given && !seq.binnedCan && !seq.calmedDog && t >= freedAt + freedTimeout)))
         {
             toCards = true;
             Log(given ? "the old man has his orange: to the cards" : "nothing was given: to the cards");
@@ -275,7 +275,7 @@ public class OldManScene : MonoBehaviour
 
     void Give(Orange o)
     {
-        given = true; givenAt = t; o.given = true; foreach (var x in list) x.grab.enabled = false;   // no more grabbing; the slide-in takes over
+        given = true; seq.gaveOrange = true; givenAt = t; o.given = true; foreach (var x in list) x.grab.enabled = false;   // no more grabbing; the slide-in takes over
         o.giveFrom = o.tr.position; o.giveT = 0f;
         float y = o.tr.position.y;
         var clip = y < 0.5f ? receiveLow : y < 1f ? receiveMid : receiveHigh;
@@ -314,7 +314,7 @@ public class OldManScene : MonoBehaviour
         r.SetPropertyBlock(mpb);
     }
 
-    float Lit(Vector3 p) => Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(litInner, litOuter, Vector3.Angle(head.forward, p - head.position)));
+    float Lit(Vector3 p) => Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(litFull, litFade, Vector3.Angle(head.forward, p - head.position)));
 
     void End()
     {

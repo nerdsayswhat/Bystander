@@ -305,15 +305,15 @@ MonoBehaviour:
   dismissAfterLook: 2
   dismissLatest: 25
   oldManLeft: 65
-  oldManDist: 1.3
+  oldManAt: 0.85
   bagLeft: 50
-  bagDist: 0.95
+  bagAt: 0.7
   footLeft: 22
   footDist: 0.5
-  closeLeft: 8
-  closeDist: 0.28
-  pickRadius: 0.16
-  giveRadius: 0.45
+  toesLeft: 8
+  toesDist: 0.6
+  receiveHoldAt: 0.5
+  giveReach: 0.55
   afterGive: 6
   freedTimeout: 60
 --- !u!4 &256359863
@@ -384,6 +384,7 @@ MonoBehaviour:
   follow: 2
   armed: 0
   holdTime: 1.5
+  reachNear: 0.3
   reachAngle: 35
   requireFist: 0
   fistDistance: 0.12
@@ -1398,6 +1399,66 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &2122156180
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2122156182}
+  - component: {fileID: 2122156181}
+  m_Layer: 0
+  m_Name: WomanDogScene
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2122156181
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2122156180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46d778e696d859e4fbee4b3dc5d6bd4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WomanDogScene
+  cower: {fileID: -6073943067415944435, guid: 719affa9dc254c9980c59dfab8c72b89, type: 3}
+  getUp: {fileID: 6222814551187783768, guid: 4330b0aca73b42a9a09b657cdf68294c, type: 3}
+  walkAway: {fileID: 7712312189825091305, guid: e307b56f406a4647a24a456c0ce8d3ae, type: 3}
+  beat3At: 50
+  womanLeft: -40
+  womanDist: 0.85
+  dogLeft: -90
+  dogDist: 0.95
+  ballRadius: 0.06
+  litInner: 20
+  litOuter: 50
+  woman: {r: 0.06, g: 0.012, b: 0.16, a: 1}
+  ball: {r: 0.05, g: 0.9, b: 0.1, a: 1}
+  ballEmission: 1.6
+  walkSpeed: 0.7
+  afterCalm: 9
+--- !u!4 &2122156182
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2122156180}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1406,3 +1467,4 @@ SceneRoots:
   - {fileID: 1791755792}
   - {fileID: 574630718}
   - {fileID: 256359863}
+  - {fileID: 2122156182}

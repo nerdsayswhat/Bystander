@@ -17,6 +17,8 @@ public static class CreateScene2
     static void Auto()
     {
         if (!EditorPrefs.GetBool(Key) && !File.Exists(Dst)) EditorApplication.delayCall += Create;
+        // a scene made before a part existed is brought up to date by itself (the same operation as the menu): Beat 3 is missing from an older Scene 2.unity
+        else if (File.Exists(Dst) && !File.ReadAllText(Dst).Contains("cower:")) EditorApplication.delayCall += Create;
     }
 
     [MenuItem("Bystander/Create Scene 2")]
@@ -37,11 +39,20 @@ public static class CreateScene2
         comp.fall = Clip("Oldman_Fall"); comp.reach = Clip("Oldman_ground_reach_loop"); comp.dismiss = Clip("Oldman_dismiss");
         comp.receiveLow = Clip("oldman_receive_low"); comp.receiveMid = Clip("oldman_receive_mid"); comp.receiveHigh = Clip("oldman_receive_high");
         EditorUtility.SetDirty(comp);
+        var beat3 = scene.GetRootGameObjects().Select(g => g.GetComponent<WomanDogScene>()).FirstOrDefault(c => c != null);
+        if (beat3 == null)
+        {
+            var go3 = new GameObject("WomanDogScene");
+            SceneManager.MoveGameObjectToScene(go3, scene);
+            beat3 = go3.AddComponent<WomanDogScene>();
+        }
+        beat3.cower = Clip("woman_cower_loop"); beat3.getUp = Clip("woman_getup_thanks"); beat3.walkAway = Clip("woman_walkaway_loop");
+        EditorUtility.SetDirty(beat3);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         if (!wasOpen) EditorSceneManager.CloseScene(scene, true);
         EditorPrefs.SetBool(Key, true);
-        Debug.Log($"Create Scene 2: {Dst} is ready (fall {Name(comp.fall)}, reach {Name(comp.reach)}, dismiss {Name(comp.dismiss)}, receive {Name(comp.receiveLow)} / {Name(comp.receiveMid)} / {Name(comp.receiveHigh)}). Open it and press Play.");
+        Debug.Log($"Create Scene 2: {Dst} is ready (fall {Name(comp.fall)}, reach {Name(comp.reach)}, dismiss {Name(comp.dismiss)}, receive {Name(comp.receiveLow)} / {Name(comp.receiveMid)} / {Name(comp.receiveHigh)}; woman {Name(beat3.cower)} / {Name(beat3.getUp)} / {Name(beat3.walkAway)}). Open it and press Play.");
     }
 
     static AnimationClip Clip(string fbx) =>

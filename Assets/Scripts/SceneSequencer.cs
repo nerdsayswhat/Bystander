@@ -25,7 +25,7 @@ public class SceneSequencer : MonoBehaviour
         new Step { name = "Warning", autoAdvance = 10f },
         new Step { name = "Tutorial: phrases to your heart", autoAdvance = 75f },          // 25 + 25 + 25
         new Step { name = "1 Darkness: chained", autoAdvance = 34f },                      // author 2026-10-27: first flash at 10 s, scene 2 at 35 s (34 + the 1 s fade); the Event List said 25 + 45
-        new Step { name = "2 Darkness: the three events", autoAdvance = 135f, breakWindow = true },   // 45 + 40 + 50
+        new Step { name = "2 Darkness: the three events", autoAdvance = 100f, breakWindow = true },   // 25 + 25 + 50 (author 2026-11-09: the old man and the can sooner; was 45 + 40 + 50 = 135)
         new Step { name = "3 Street: darkness lifts", autoAdvance = 110f, breakWindow = true },       // 50 + 60
         new Step { name = "4 Cards", autoAdvance = 80f },                                  // 25 + 40 + 15
         new Step { name = "5 Darkness: no chains", autoAdvance = 160f },                   // 15 + 50 + 40 + 55
@@ -37,7 +37,8 @@ public class SceneSequencer : MonoBehaviour
     public int chainsFromStep = 2;                // the warning and the tutorial (steps 0 and 1) have no chains
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
-    public bool showLabel = true;                 // placeholder labels on or off
+    public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
+    public bool showLabel = true;                // placeholder labels on or off
 
     // what the player did in scene 5, for scene 6 (the scene content sets these)
     public bool gaveOrange, binnedCan, calmedDog;
@@ -91,9 +92,9 @@ public class SceneSequencer : MonoBehaviour
         label.alignment = TextAnchor.MiddleCenter;
         label.color = Color.white;
 
-        // a scene opened on its own starts at its own step: Scene 2.unity begins at "2 Darkness: the three events"
+        // Scene 2.unity holds everything (it is a copy of Scene 1 plus the old man and the can): pressing Play in the editor begins at "2 Darkness: the three events" to save the wait, a build begins at the warning
         int first = 0;
-        if (SceneManager.GetActiveScene().name == "Scene 2")
+        if (TestBeat3Only || Application.isEditor && SceneManager.GetActiveScene().name == "Scene 2")   // only in the editor: a build of Scene 2 runs the whole film from the warning
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("2")) { first = i; break; }
         GoTo(first);
     }
@@ -129,7 +130,7 @@ public class SceneSequencer : MonoBehaviour
     }
 
     public void Next() => GoTo(Index + 1);
-    public void GoToCards() => GoTo(cardsStep);
+    public void GoToCards() { if (Index != cardsStep) GoTo(cardsStep); }   // two scene parts may both ask (the orange given and the can binned): the second is ignored
     public bool deferBreak;                       // scene content sets this while it wants the player to act after the chains break (give the orange to the old man); it then calls GoToCards() itself
 
     public void GoTo(int i)

@@ -199,7 +199,14 @@ public class ParticleFigure : MonoBehaviour
     {
         if (clip == null || !graph.IsValid() || !playing) return;
         float len = Mathf.Max(clip.length, 0.01f);
+        float prev = clipTime;
         clipTime = loop ? (clipTime + Time.deltaTime) % len : Mathf.Min(clipTime + Time.deltaTime, len);   // loops, or plays once and holds the last pose
+        if (loop && clipTime < prev && blendTime > 0f && parts != null)   // the loop seam: ease from the last pose into the first so the restart does not jerk
+        {
+            if (blendFrom == null || blendFrom.Length != parts.Length) blendFrom = new Vector3[parts.Length];
+            for (int i = 0; i < parts.Length; i++) blendFrom[i] = parts[i].position;
+            blend = 0f;
+        }
         playable.SetTime(clipTime);
         graph.Evaluate(0f);
     }

@@ -11,7 +11,7 @@ using UnityEngine.Rendering.Universal;
 // limit (SyntheticHand wrist lock) while the real hand keeps pulling, and the chain strains.
 // The chain is drawn as particles: every link (and cuff) is a ring of points; the solid link meshes stay
 // as an invisible skeleton (renderSolid shows them for comparison).
-// Break: pull a hand past the limit towards a BreakTarget for holdTime and the particles burst apart, the
+// Break: pull a hand past the limit towards a BreakTarget for holdFor and the particles burst apart, the
 // hands are freed and onBroken fires. Release() disperses them without the event (scene 5).
 // Add to an empty GameObject in the scene (rig at world origin).
 public class ChainWrap : MonoBehaviour
@@ -35,9 +35,9 @@ public class ChainWrap : MonoBehaviour
     public float follow = 2f;                                     // how fast the wrap re-centres on the player (1/s)
 
     public bool armed = true;                                     // the sequencer switches this off outside the break window
-    public float holdTime = 1.5f;                                  // seconds of deliberate grab (fist while pulling) to break
-    public float reachNear = 0.3f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (a hand hanging at the hip is 0.4 m or more above a floor orange; bending down to one gets within 0.2 m)
-    public float reachAngle = 35f;                                // degrees: the pull must point this close to a BreakTarget
+    public float holdFor = 1.0f;                                  // seconds of deliberate grab (fist while pulling) to break
+    public float reachDist2 = 0.45f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (a hand hanging at the hip is 0.4 m or more above a floor orange; bending down to one gets within 0.2 m)
+    public float reachCone = 40f;                                // degrees: the pull must point this close to a BreakTarget
     public bool requireFist = false;                              // also demand a closed hand (see fistDistance)
     public float fistDistance = 0.12f;                            // mean fingertip distance from the wrist (m) below which the hand counts as closed
     public Material particleMaterial;                             // falls back to Resources/ChainParticle
@@ -47,7 +47,7 @@ public class ChainWrap : MonoBehaviour
     public float emissionRest = 1.5f, emissionPull = 10f;         // self-lit brightness: normal at rest, very bright glowing at full pull (above ~3 the greys clip to white)
     public int ringPoints = 30;                                   // particles per link: dense enough to read as a solid chain
     public bool renderSolid = false;                              // draw the solid link meshes too (for comparing)
-    public float minStrain = 0.1f;                                // how far past the limit (0..1) the hand must pull for the grab to count
+    public float minPull = 0.12f;                                // how far past the limit (0..1) the hand must pull for the grab to count
     public float breakDuration = 1.2f, scatterSpeed = 3.5f;       // violent: the particles burst outwards and shrink over this long
     public UnityEvent onBroken;                                   // the sequencer listens: jump to the cards
 
@@ -287,7 +287,7 @@ public class ChainWrap : MonoBehaviour
         right.anchor = body + turn * new Vector3(beltAnchor.x, 0f, beltAnchor.z) + Vector3.up * (topY - beltAnchor.y);
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
-        if (left.hold >= holdTime || right.hold >= holdTime) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
+        if (left.hold >= holdFor || right.hold >= holdFor) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
         float r = Mathf.Max(left.resist, right.resist);   // the whole chain lightens when either hand pulls
         float tr = Mathf.Max(left.shake, right.shake);   // and shakes with the harder-shaking hand
         mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, r));
@@ -375,7 +375,7 @@ public class ChainWrap : MonoBehaviour
         float dist = d.magnitude, strain = 0f;
         // a reach is out in front: a hand down at the hip or behind the back points at the floor oranges too, but is not reaching
         s.fwd = NearestTarget(real); s.ang = MinAngle(s.anchor, d);
-        bool aimed = armed && s.fwd < reachNear && s.ang < reachAngle;
+        bool aimed = armed && s.fwd < reachDist2 && s.ang < reachCone;
         s.aim = Mathf.MoveTowards(s.aim, aimed ? 1f : 0f, Time.deltaTime * 6f);   // blend (shake, stretch) so nothing jumps
         float limit = reach + stretch * s.aim; s.dist = dist; s.lim = limit; s.fist = IsFist(s.synth, fistDistance);                       // the chain stretches a little when, and only when, reaching for the object
         var end = real;
@@ -393,8 +393,8 @@ public class ChainWrap : MonoBehaviour
         var off = real - body; off.y = 0f;
         s.resist = Mathf.InverseLerp(limit * tremorStart, limit + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
         // deliberate reach: pulling past the limit towards a BreakTarget; the chain strains harder the longer it is held
-        s.hold = aimed && strain >= minStrain && (!requireFist || IsFist(s.synth, fistDistance)) ? s.hold + Time.deltaTime : 0f;
-        s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / holdTime));
+        s.hold = aimed && strain >= minPull && (!requireFist || IsFist(s.synth, fistDistance)) ? s.hold + Time.deltaTime : 0f;
+        s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / holdFor));
         mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, s.resist));
         s.shake = Mathf.Lerp(tremble, trembleTarget, s.aim) * s.resist;
         var mid = (s.anchor + end) * 0.5f + Vector3.down * sag * (1f - strain);
