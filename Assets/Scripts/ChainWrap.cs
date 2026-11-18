@@ -62,7 +62,7 @@ public class ChainWrap : MonoBehaviour
         get => hidden;
         set
         {
-            if (hidden && !value && Camera.main != null) { body = BodyTarget(Camera.main.transform); yaw = Camera.main.transform.eulerAngles.y; }   // reappear centred on the player, facing the way they face
+            if (hidden && !value && Camera.main != null) { body = BodyTarget(Camera.main.transform); yaw = Camera.main.transform.eulerAngles.y; Remeasure(Camera.main.transform.position.y); }   // reappear centred on the player, facing the way they face
             hidden = value;
             if (prend != null) prend.enabled = !hidden;
         }
@@ -77,7 +77,7 @@ public class ChainWrap : MonoBehaviour
     public float LeftShake => left.shake;
     public float RightShake => right.shake;
 
-    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f, dist, lim, fwd, ang; public bool fist; }
+    class Side { public Transform hand, cuff; public Transform[] links; public Vector3 anchor, lastReal; public bool lost; public SyntheticHand synth; public bool left; public float resist, hold, aim, shake, elong = 1f, dist, lim, fwd, ang; public bool fist; }
     static readonly HandJointId[] Tips = { HandJointId.HandIndexTip, HandJointId.HandMiddleTip, HandJointId.HandRingTip, HandJointId.HandPinkyTip };
     struct Src { public Transform t; public int n, group; public float y; public bool thick; }   // a ring of particles around a link or cuff
     Material pmat; Src[] srcs; ParticleSystem ps; ParticleSystem.Particle[] parts; Vector3[] vel; float[] size; float brokenAt;
@@ -85,6 +85,14 @@ public class ChainWrap : MonoBehaviour
     MaterialPropertyBlock mpb;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");   // URP Unlit colour (Assets/Materials/ChainLink.mat)
     Transform[] torso; Renderer[] torsoR; Vector3[] torsoOff;   // torso links and their offsets from the body centre
+    float startedAt = -99f;
+    // the wrap hangs from the head height measured at launch, which is wrong if the headset was low then (in the hand, on a table): re-measure when the chains first show and during the first 8 s
+    void Remeasure(float y)
+    {
+        if (torsoOff == null || Mathf.Abs(y - topY) < 0.01f) return;
+        for (int i = 0; i < torsoOff.Length; i++) torsoOff[i].y += y - topY;
+        topY = y;
+    }
     Vector3 body; float topY, yaw;                               // smoothed body centre (XZ), head height at start, and smoothed body heading (degrees)
 
     IEnumerator Start()
@@ -111,7 +119,7 @@ public class ChainWrap : MonoBehaviour
         }
         mpb = new MaterialPropertyBlock();
 
-        topY = head.position.y;
+        topY = head.position.y; startedAt = Time.time;
         body = BodyTarget(head);
         yaw = head.eulerAngles.y;
         BuildTorso();
@@ -269,6 +277,20 @@ public class ChainWrap : MonoBehaviour
         link.rotation = Quaternion.LookRotation(tangent.normalized) * Quaternion.Euler(0, 0, i % 2 == 0 ? 0 : 90);
     }
 
+    // for the grey-screen hunt: a line (4 per second) whenever tracking is lost, a chain pulls hard, or a chain link, particle or hand is close to the eyes
+    float hazeAt;
+    void LogHaze()
+    {
+        if (Time.time < hazeAt || left.hand == null || right.hand == null) return;
+        hazeAt = Time.time + 0.25f;
+        var eye = Camera.main.transform.position; float near = 99f; int close = 0;
+        foreach (var sd in new[] { left, right })
+            foreach (var l in sd.links) if (l.gameObject.activeSelf) { float d = Vector3.Distance(eye, l.position); near = Mathf.Min(near, d); if (d < 0.4f) close++; }
+        float hl = Vector3.Distance(eye, left.hand.position), hr = Vector3.Distance(eye, right.hand.position);
+        if (!left.lost && !right.lost && left.resist < 0.8f && right.resist < 0.8f && near > 0.4f && Mathf.Min(hl, hr) > 0.3f) return;
+        Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} haze? lost L{(left.lost ? 1 : 0)} R{(right.lost ? 1 : 0)} | resist {left.resist:0.00}/{right.resist:0.00} strain {LeftStrain:0.00}/{RightStrain:0.00} | nearest link {near:0.00} m, {close} links within 0.4 m | hands from eyes {hl:0.00}/{hr:0.00} m");
+    }
+
     void Update()
     {
         if (left.links == null) return;
@@ -283,10 +305,12 @@ public class ChainWrap : MonoBehaviour
         body = Vector3.Lerp(body, BodyTarget(Camera.main.transform), 1f - Mathf.Exp(-follow * Time.deltaTime));
         yaw = Mathf.LerpAngle(yaw, Camera.main.transform.eulerAngles.y, 1f - Mathf.Exp(-follow * Time.deltaTime));   // the belt turns with the player: left stays on the player's left whichever way they face
         var turn = Quaternion.Euler(0f, yaw, 0f);
+        if (Time.time < startedAt + 8f) Remeasure(Camera.main.transform.position.y);
         left.anchor = body + turn * new Vector3(-beltAnchor.x, 0f, beltAnchor.z) + Vector3.up * (topY - beltAnchor.y);
         right.anchor = body + turn * new Vector3(beltAnchor.x, 0f, beltAnchor.z) + Vector3.up * (topY - beltAnchor.y);
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
+        LogHaze();
         if (left.hold >= holdFor || right.hold >= holdFor) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
         float r = Mathf.Max(left.resist, right.resist);   // the whole chain lightens when either hand pulls
         float tr = Mathf.Max(left.shake, right.shake);   // and shakes with the harder-shaking hand
@@ -371,6 +395,10 @@ public class ChainWrap : MonoBehaviour
     {
         if (s.hand == null) return 0f;
         var real = s.hand.position;
+        // lost hand tracking parks the hand at the tracking origin on the floor (log: hand (0,0,-0.18)), 1 m from the belt: full strain, every link blazing at emission 10, bloom washes the view out. Hold the last good position instead.
+        s.lost = real.y < 0.05f && new Vector2(real.x, real.z).magnitude < 0.3f;
+        if (s.lost) real = s.lastReal == Vector3.zero ? s.anchor + Vector3.down * 0.3f : s.lastReal;
+        else s.lastReal = real;
         var d = real - s.anchor;
         float dist = d.magnitude, strain = 0f;
         // a reach is out in front: a hand down at the hip or behind the back points at the floor oranges too, but is not reaching

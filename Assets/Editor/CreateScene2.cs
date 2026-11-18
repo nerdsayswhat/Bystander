@@ -18,7 +18,7 @@ public static class CreateScene2
     {
         if (!EditorPrefs.GetBool(Key) && !File.Exists(Dst)) EditorApplication.delayCall += Create;
         // a scene made before a part existed is brought up to date by itself (the same operation as the menu): Beat 3 is missing from an older Scene 2.unity
-        else if (File.Exists(Dst) && !File.ReadAllText(Dst).Contains("cower:")) EditorApplication.delayCall += Create;
+        else if (File.Exists(Dst) && !File.ReadAllText(Dst).Contains("cower:") || !File.ReadAllText(Dst).Contains("idleMan:")) EditorApplication.delayCall += Create;
     }
 
     [MenuItem("Bystander/Create Scene 2")]
@@ -48,6 +48,15 @@ public static class CreateScene2
         }
         beat3.cower = Clip("woman_cower_loop"); beat3.getUp = Clip("woman_getup_thanks"); beat3.walkAway = Clip("woman_walkaway_loop");
         EditorUtility.SetDirty(beat3);
+        var cards = scene.GetRootGameObjects().Select(g => g.GetComponent<CardsScene>()).FirstOrDefault(c => c != null);
+        if (cards == null)
+        {
+            var go4 = new GameObject("CardsScene");
+            SceneManager.MoveGameObjectToScene(go4, scene);
+            cards = go4.AddComponent<CardsScene>();
+        }
+        cards.idleMan = ClipAt("Assets/Animations/Mixamo/standing_idle_1.fbx"); cards.idleWoman = ClipAt("Assets/Animations/Mixamo/standing_idle_2.fbx");
+        EditorUtility.SetDirty(cards);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         if (!wasOpen) EditorSceneManager.CloseScene(scene, true);
@@ -57,6 +66,9 @@ public static class CreateScene2
 
     static AnimationClip Clip(string fbx) =>
         AssetDatabase.LoadAllAssetsAtPath(Dir + fbx + ".fbx").OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
+
+    static AnimationClip ClipAt(string path) =>
+        AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().FirstOrDefault(c => !c.name.StartsWith("__preview__"));
 
     static string Name(AnimationClip c) => c != null ? c.name : "MISSING";
 }

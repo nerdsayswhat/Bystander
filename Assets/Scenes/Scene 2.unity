@@ -300,8 +300,8 @@ MonoBehaviour:
   orange: {r: 1, g: 0.32, b: 0.03, a: 1}
   orangeEmission: 1.6
   bag: {r: 0.55, g: 0.22, b: 0.04, a: 1}
-  litInner: 20
-  litOuter: 50
+  litFull: 35
+  litFade: 75
   dismissAfterLook: 2
   dismissLatest: 25
   oldManLeft: 65
@@ -383,9 +383,9 @@ MonoBehaviour:
   bodyBack: 0.08
   follow: 2
   armed: 0
-  holdTime: 1.5
-  reachNear: 0.3
-  reachAngle: 35
+  holdFor: 1
+  reachDist2: 0.45
+  reachCone: 40
   requireFist: 0
   fistDistance: 0.12
   particleMaterial: {fileID: 0}
@@ -397,7 +397,7 @@ MonoBehaviour:
   emissionPull: 10
   ringPoints: 30
   renderSolid: 0
-  minStrain: 0.1
+  minPull: 0.12
   breakDuration: 1.2
   scatterSpeed: 3.5
   onBroken:
@@ -729,6 +729,60 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &1077919526
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1077919528}
+  - component: {fileID: 1077919527}
+  m_Layer: 0
+  m_Name: CardsScene
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1077919527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1077919526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a0879fcea9378746be6369841163e0f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardsScene
+  idleMan: {fileID: -203655887218126122, guid: 75e4fc248632fb042802e89a518f067f, type: 3}
+  idleWoman: {fileID: -203655887218126122, guid: 72b9f92aca1c7b74bb7116046312e775, type: 3}
+  juliaAt: 25
+  endlessAt: 33
+  chainsAt: 65
+  cardDist: 1.1
+  juliaTurn: 38
+  figureScale: 0.28
+  man: {r: 0.004, g: 0.05, b: 0.16, a: 1}
+  woman: {r: 0.06, g: 0.012, b: 0.16, a: 1}
+--- !u!4 &1077919528
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1077919526}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1160380893
 GameObject:
   m_ObjectHideFlags: 0
@@ -1432,13 +1486,15 @@ MonoBehaviour:
   getUp: {fileID: 6222814551187783768, guid: 4330b0aca73b42a9a09b657cdf68294c, type: 3}
   walkAway: {fileID: 7712312189825091305, guid: e307b56f406a4647a24a456c0ce8d3ae, type: 3}
   beat3At: 50
-  womanLeft: -40
-  womanDist: 0.85
-  dogLeft: -90
-  dogDist: 0.95
-  ballRadius: 0.06
-  litInner: 20
-  litOuter: 50
+  womanAt: -25
+  womanRange: 0.8
+  dogAt: -115
+  dogRange: 0.95
+  womanTweak: 0
+  ballSize: 0.04
+  ballRest: 0.04
+  litFull: 35
+  litFade: 75
   woman: {r: 0.06, g: 0.012, b: 0.16, a: 1}
   ball: {r: 0.05, g: 0.9, b: 0.1, a: 1}
   ballEmission: 1.6
@@ -1468,3 +1524,4 @@ SceneRoots:
   - {fileID: 574630718}
   - {fileID: 256359863}
   - {fileID: 2122156182}
+  - {fileID: 1077919528}

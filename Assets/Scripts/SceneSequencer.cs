@@ -38,6 +38,7 @@ public class SceneSequencer : MonoBehaviour
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
+    public static readonly bool TestCardsOnly = true;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
     public bool showLabel = true;                // placeholder labels on or off
 
     // what the player did in scene 5, for scene 6 (the scene content sets these)
@@ -96,6 +97,8 @@ public class SceneSequencer : MonoBehaviour
         int first = 0;
         if (TestBeat3Only || Application.isEditor && SceneManager.GetActiveScene().name == "Scene 2")   // only in the editor: a build of Scene 2 runs the whole film from the warning
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("2")) { first = i; break; }
+        if (TestCardsOnly)
+            for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("4")) { first = i; break; }
         GoTo(first);
     }
 
@@ -155,7 +158,7 @@ public class SceneSequencer : MonoBehaviour
             chains.armed = s.breakWindow;
             if (i == noChainsStep) chains.Release();      // never broken: they disperse quietly as scene 5 begins (no-op if already broken)
         }
-        label.text = showLabel && i >= firstPlaceholder ? s.name : "";
+        label.text = showLabel && i >= firstPlaceholder && !s.name.StartsWith("4") ? s.name : "";   // the cards (step "4") are built
         s.onEnter?.Invoke();
         yield return FadeTo(0f);
         busy = false;

@@ -20,6 +20,7 @@ public class ParticleFigure : MonoBehaviour
     public float groundY = 0f;                      // world height of the floor (the tracking origin is the floor); the lowest particle is placed on it
     public bool playing = true;                     // false: holds the first pose of the clip until it is set to true (a figure that must be in place but not yet moving)
     public float blendTime = 0.4f;                  // seconds the particles take to ease from the old pose to the new one when Play switches clips (0 = a hard cut)
+    public float cutBelowY = -999f;                 // world height: particles below it are hidden (size 0), e.g. to show a figure from the waist up (the cards); -999 = all shown
     public float brightness = 1f;                   // 0..1 scales the glow; 0 hides the figure (scenes where things are lit only where the player looks)
 
     struct Seg { public HumanBodyBones a, b; public float radius, weight; }
@@ -66,6 +67,7 @@ public class ParticleFigure : MonoBehaviour
     public int ParticleCount => parts != null ? parts.Length : 0;
     public Transform Bone(HumanBodyBones b) => animator != null ? animator.GetBoneTransform(b) : null;   // a bone of the live skeleton (e.g. a hand to hand something to)
     public float ClipTime => graph.IsValid() ? clipTime : -1f;
+    public float HighestY { get; private set; }                     // height of the highest particle (the cards fit the head under their top edge)
     public float LowestY { get; private set; }                      // height of the lowest particle (for ExperienceLog: 0 means the feet are on the floor)
     float clipTime;
     PlayableGraph graph; AnimationClipPlayable playable; AnimationPlayableOutput aout; Animator animator;
@@ -157,6 +159,8 @@ public class ParticleFigure : MonoBehaviour
     {
         parts = new ParticleSystem.Particle[bone.Length];
         for (int i = 0; i < parts.Length; i++) { parts[i].startLifetime = 1000f; parts[i].remainingLifetime = 1000f; parts[i].startSize = Random.Range(sizeMin, sizeMax); parts[i].startColor = color; }
+        sizes0 = new float[parts.Length];
+        for (int i = 0; i < parts.Length; i++) sizes0[i] = parts[i].startSize;
         var go = new GameObject("FigureParticles");
         go.transform.SetParent(transform, false);
         ps = go.AddComponent<ParticleSystem>();
@@ -173,7 +177,7 @@ public class ParticleFigure : MonoBehaviour
 
     // switch to another clip (a fall, then reaching on the ground, then a dismissive wave): the new clip starts where the figure is,
     // with its hips over the hips of the pose it replaces. A hard cut, no blend.
-    Vector3[] blendFrom; float blend = 1f;
+    Vector3[] blendFrom; float blend = 1f; float[] sizes0;
     public void Play(AnimationClip next, bool loopIt = true)
     {
         if (next == null || !graph.IsValid()) return;
@@ -214,8 +218,8 @@ public class ParticleFigure : MonoBehaviour
     void LateUpdate()
     {
         if (ps == null) return;
-        float low = float.MaxValue;
-        for (int i = 0; i < parts.Length; i++) { parts[i].position = bone[i].TransformPoint(local[i]); low = Mathf.Min(low, parts[i].position.y); }
+        float low = float.MaxValue, high = float.MinValue;
+        for (int i = 0; i < parts.Length; i++) { parts[i].position = bone[i].TransformPoint(local[i]); low = Mathf.Min(low, parts[i].position.y); high = Mathf.Max(high, parts[i].position.y); }
         float lift = groundY + particleSize * 0.5f - low;   // keep the lowest particle on the floor every frame: kneeling and lying clips touch the ground instead of floating
         for (int i = 0; i < parts.Length; i++) parts[i].position += Vector3.up * lift;
         if (blend < 1f)                                     // a clip switch: ease every particle from where it was to where the new pose puts it
@@ -224,6 +228,9 @@ public class ParticleFigure : MonoBehaviour
             float k = Mathf.SmoothStep(0f, 1f, blend);
             for (int i = 0; i < parts.Length; i++) parts[i].position = Vector3.Lerp(blendFrom[i], parts[i].position, k);
         }
+        if (cutBelowY > -900f)
+            for (int i = 0; i < parts.Length; i++) parts[i].startSize = parts[i].position.y < cutBelowY ? 0f : sizes0[i];
+        HighestY = high + lift;
         LowestY = -lift;                                    // how far the clip itself had lifted the figure (0 = feet on the floor)
         ps.SetParticles(parts, parts.Length);
         if (!Mathf.Approximately(brightness, lastBrightness))
