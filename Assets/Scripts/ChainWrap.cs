@@ -130,6 +130,7 @@ public class ChainWrap : MonoBehaviour
             s.cuff = MakeCuff();
         }
         BuildParticles();
+        if (releaseWhenBuilt) Break(false);
     }
 
     void BuildParticles()
@@ -355,7 +356,8 @@ public class ChainWrap : MonoBehaviour
         return n == Tips.Length && sum / n < limit;
     }
 
-    public void Release() => Break(false);   // chains gone without the event, e.g. entering scene 5
+    bool releaseWhenBuilt;
+    public void Release() { if (left.links == null) releaseWhenBuilt = true; else Break(false); }   // chains gone without the event, e.g. entering scene 5; asked before they are built (a build that starts in scene 5), it happens as soon as they are
 
     public void Break(bool fireEvent = true)
     {

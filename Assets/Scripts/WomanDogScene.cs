@@ -14,6 +14,7 @@ using UnityEngine;
 public class WomanDogScene : MonoBehaviour
 {
     public AnimationClip cower, getUp, walkAway;
+    public float scene5At = 40f;                            // scene 5: seconds into the step (author 2026-11-20: scene 2 was 50, a little faster)
     public float beat3At = 50f;                             // seconds after the step is visible
     public float womanAt = -25f, womanRange = 0.8f;         // degrees left of where the head pointed at the start (negative = right), metres
     public float dogAt = -115f, dogRange = 0.95f;           // renamed so stale saved values are dropped: about 1.2 m between them
@@ -30,7 +31,7 @@ public class WomanDogScene : MonoBehaviour
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase;
     ParticleFigure womanFig; ParticleDog dog; Transform ballTr; Renderer ballR; HandGrabInteractable grab;
     Vector3 origin, fwd, womanPos, dogPos, awayDir; MaterialPropertyBlock mpb;
-    float stride, t, findTimer, womanLit, dogLit, ballLit, vy, calmedAt; bool held, falling, calmed, walking, toCards, warned;
+    float stride, t, findTimer, womanLit, dogLit, ballLit, vy, calmedAt; bool scene5, held, falling, calmed, walking, toCards, warned;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Spawn()
@@ -50,16 +51,16 @@ public class WomanDogScene : MonoBehaviour
             if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
             if (head == null && Camera.main != null) head = Camera.main.transform;
         }
-        bool want = seq != null && head != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("2");
+        bool want = seq != null && head != null && seq.Index >= 0 && (seq.steps[seq.Index].name.StartsWith("2") || seq.steps[seq.Index].name.StartsWith("5"));
         if (want && phase == Phase.Idle && !seq.Busy) Begin();
         if (!want && phase != Phase.Idle) { End(); return; }
         if (phase == Phase.Idle) return;
 
         t += dt;
-        if (phase == Phase.Waiting && t >= (SceneSequencer.TestBeat3Only ? 3f : beat3At)) Appear();
+        if (phase == Phase.Waiting && t >= (SceneSequencer.TestBeat3Only ? 3f : scene5 ? scene5At : beat3At)) Appear();
         if (phase != Phase.Shown) return;
 
-        if (!calmed && chain != null && chain.Broken) grab.enabled = true;          // the hands are free: the ball can be grabbed
+        if (!calmed && ((chain != null && chain.Broken) || scene5)) grab.enabled = true;          // the hands are free: the ball can be grabbed
         if (falling && !held)
         {
             vy -= 9.8f * dt;
@@ -74,7 +75,7 @@ public class WomanDogScene : MonoBehaviour
                 womanFig.Play(walkAway, true); walking = true; stride = walkAway.averageSpeed.magnitude; if (stride < 0.1f) stride = walkSpeed; Log($"the woman walks away at {stride:0.00} m/s (clip speed {walkAway.averageSpeed.magnitude:0.00}, length {walkAway.length:0.0}s)");
             }
             if (walking) womanFig.Skeleton.position += awayDir * stride * dt;
-            if (!toCards && t >= calmedAt + afterCalm) { toCards = true; Log("the dog is calm and the woman has gone: to the cards"); seq.GoToCards(); }
+            if (!scene5 && !toCards && t >= calmedAt + afterCalm) { toCards = true; Log("the dog is calm and the woman has gone: to the cards"); seq.GoToCards(); }
         }
         // lit only where the player looks; once calmed they stay lit so the ball is not alone in the dark
         womanLit = Mathf.MoveTowards(womanLit, calmed ? 1f : Lit(womanPos + Vector3.up * 0.9f), 3f * dt);
@@ -94,6 +95,7 @@ public class WomanDogScene : MonoBehaviour
             if (!warned) { warned = true; Debug.LogWarning("WomanDogScene: the woman clips are not assigned (use Bystander > Create Scene 2)"); }
             return;
         }
+        scene5 = seq.steps[seq.Index].name.StartsWith("5");
         t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = false;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
@@ -132,7 +134,7 @@ public class WomanDogScene : MonoBehaviour
         grab.InjectOptionalPointableElement(g);
         grab.enabled = false;                                                    // opens when the chains break
         g.WhenPointerEventRaised += e => OnGrab(e.Type);
-        seq.deferBreak = true;                                                   // breaking the chains must not jump to the cards: the ball comes first
+        if (!scene5) seq.deferBreak = true;                                      // breaking the chains must not jump to the cards: the ball comes first
         phase = Phase.Waiting;
         Log("scene 2 beat 3 waits");
     }

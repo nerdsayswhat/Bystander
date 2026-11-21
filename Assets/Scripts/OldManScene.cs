@@ -34,6 +34,7 @@ public class OldManScene : MonoBehaviour
     public float toesLeft = 8f, toesDist = 0.6f;             // and one closer still, almost at the toes
     public float receiveHoldAt = 0.5f;                      // 0..1: how far into the receive clip he gets (hand out) before he waits for the orange
     public float giveReach = 0.55f;                          // metres along the floor: let go this close to the old man (and below head height) and he reaches out and takes it
+    public float scene5Start = 0f;                          // scene 5: extra darkness before he falls (author 2026-11-20: scene 2 timings, a little faster; his own 3 s of darkness remains)
     public float afterGive = 6f, freedTimeout = 60f;        // seconds from the orange being taken, or from the break with nothing given, to the cards
 
     public string Status => phase == Phase.Idle ? null : $"phase={phase} t={t:0.0} lit={(figure != null ? figure.brightness : 0f):0.00} look={dwell:0.0}s freed={(freed ? 1 : 0)} given={(given ? 1 : 0)} held={held}";
@@ -51,7 +52,7 @@ public class OldManScene : MonoBehaviour
     readonly List<Orange> list = new List<Orange>();
     Transform bagTr; Renderer bagR; float bagLit;
     Vector3 origin, fwd, oldManPos; MaterialPropertyBlock mpb;
-    AnimationClip receiving; bool offering; int held; float dismissedAt; bool dismissed; float t, fallAt, dwell, findTimer, freedAt, givenAt; bool spilled, looked, warned, freed, given, toCards;
+    AnimationClip receiving; bool offering; int held; float dismissedAt; bool dismissed; float t, fallAt, dwell, findTimer, freedAt, givenAt; bool scene5, spilled, looked, warned, freed, given, toCards;
 
     void Update()
     {
@@ -63,7 +64,7 @@ public class OldManScene : MonoBehaviour
             if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
             if (head == null && Camera.main != null) head = Camera.main.transform;
         }
-        bool want = !SceneSequencer.TestBeat3Only && seq != null && head != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("2");
+        bool want = !SceneSequencer.TestBeat3Only && seq != null && head != null && seq.Index >= 0 && (seq.steps[seq.Index].name.StartsWith("2") || seq.steps[seq.Index].name.StartsWith("5"));   // scene 2 (chained) and scene 5 (no chains)
         if (want && phase == Phase.Idle && !seq.Busy) Begin();
         if (!want && phase != Phase.Idle) { End(); return; }
         if (phase == Phase.Idle) return;
@@ -72,7 +73,7 @@ public class OldManScene : MonoBehaviour
         switch (phase)
         {
             case Phase.Dark:
-                if (t >= fallDelay)
+                if (t >= (scene5 ? scene5Start : 0f) + fallDelay)
                 {
                     figure.playing = true; fallAt = t; phase = Phase.Falling;
                     Log("old man falls");
@@ -118,8 +119,9 @@ public class OldManScene : MonoBehaviour
             if (!warned) { warned = true; Debug.LogWarning("OldManScene: the fall and reach clips are not assigned (use Bystander > Create Scene 2)"); }
             return;
         }
-        t = 0f; dwell = 0f; spilled = false; looked = false; freed = false; given = false; toCards = false; dismissed = false; offering = false;
-        seq.deferBreak = true;                                // the break does not jump to the cards by itself in this scene
+        scene5 = seq.steps[seq.Index].name.StartsWith("5");
+        t = 0f; dwell = 0f; spilled = false; looked = false; freed = scene5; freedAt = 0f; given = false; toCards = false; dismissed = false; offering = false;   // scene 5 has no chains: the hands are free from the start
+        if (!scene5) seq.deferBreak = true;                   // the break does not jump to the cards by itself in this scene
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
         oldManPos = At(oldManLeft, oldManAt);
@@ -178,7 +180,7 @@ public class OldManScene : MonoBehaviour
             list.Add(o);
         }
         phase = Phase.Dark;
-        Log("scene 2 beat 1 begins");
+        Log(scene5 ? "scene 5 beat 2 begins (no chains)" : "scene 2 beat 1 begins");
     }
 
     void Spill()
@@ -236,7 +238,7 @@ public class OldManScene : MonoBehaviour
                 else o.tr.position = o.hand.position;
             }
         }
-        if (!toCards && ((given && list.Exists(x => x.arrived) && t >= givenAt + afterGive) || (!given && !seq.binnedCan && !seq.calmedDog && t >= freedAt + freedTimeout)))
+        if (!scene5 && !toCards && ((given && list.Exists(x => x.arrived) && t >= givenAt + afterGive) || (!given && !seq.binnedCan && !seq.calmedDog && t >= freedAt + freedTimeout)))
         {
             toCards = true;
             Log(given ? "the old man has his orange: to the cards" : "nothing was given: to the cards");

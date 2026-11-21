@@ -28,7 +28,7 @@ public class SceneSequencer : MonoBehaviour
         new Step { name = "2 Darkness: the three events", autoAdvance = 100f, breakWindow = true },   // 25 + 25 + 50 (author 2026-11-09: the old man and the can sooner; was 45 + 40 + 50 = 135)
         new Step { name = "3 Street: darkness lifts", autoAdvance = 110f, breakWindow = true },       // 50 + 60
         new Step { name = "4 Cards", autoAdvance = 80f },                                  // 25 + 40 + 15
-        new Step { name = "5 Darkness: no chains", autoAdvance = 160f },                   // 15 + 50 + 40 + 55
+        new Step { name = "5 Darkness: no chains", autoAdvance = 90f },                    // author 2026-11-20: scene 2 timings, a little faster (old man 0, can 20 s, woman and dog 40 s; was 15 + 50 + 40 + 55 = 160)
         new Step { name = "6 Street again", autoAdvance = 115f },                          // 45 + 70
         new Step { name = "End", autoAdvance = 15f },
         new Step { name = "Credits", autoAdvance = 45f },
@@ -38,7 +38,8 @@ public class SceneSequencer : MonoBehaviour
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
-    public static readonly bool TestCardsOnly = true;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
+    public static readonly bool TestScene5Only = false;   // build for testing scene 5 only: starts at the "5 ..." step (no chains), editor or build. Set false for the real film.
+    public static readonly bool TestCardsOnly = false;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
     public bool showLabel = true;                // placeholder labels on or off
 
     // what the player did in scene 5, for scene 6 (the scene content sets these)
@@ -97,6 +98,8 @@ public class SceneSequencer : MonoBehaviour
         int first = 0;
         if (TestBeat3Only || Application.isEditor && SceneManager.GetActiveScene().name == "Scene 2")   // only in the editor: a build of Scene 2 runs the whole film from the warning
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("2")) { first = i; break; }
+        if (TestScene5Only)
+            for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("5")) { first = i; break; }
         if (TestCardsOnly)
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("4")) { first = i; break; }
         GoTo(first);
@@ -158,7 +161,8 @@ public class SceneSequencer : MonoBehaviour
             chains.armed = s.breakWindow;
             if (i == noChainsStep) chains.Release();      // never broken: they disperse quietly as scene 5 begins (no-op if already broken)
         }
-        label.text = showLabel && i >= firstPlaceholder && !s.name.StartsWith("4") ? s.name : "";   // the cards (step "4") are built
+        label.text = showLabel && i >= firstPlaceholder && !s.name.StartsWith("4") && !s.name.StartsWith("5") && s.name != "End" && s.name != "Credits" ? s.name : "";   // the cards (step "4"), scene 5, End and Credits are built
+        if (s.name.StartsWith("5")) gaveOrange = binnedCan = calmedDog = false;   // scene 6 shows what the player did in scene 5, not in scene 2
         s.onEnter?.Invoke();
         yield return FadeTo(0f);
         busy = false;

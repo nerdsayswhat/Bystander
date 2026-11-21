@@ -12,6 +12,7 @@ using UnityEngine;
 // Placeholder shapes (a red cylinder can, a pale blue cylinder bin) and no sound yet (the kick and the rolling can come with the sound effects).
 public class CanBinScene : MonoBehaviour
 {
+    public float scene5At = 20f;                            // scene 5: seconds into the step (author 2026-11-20: scene 2 was 25, a little faster)
     public float beat2At = 25f;                             // seconds after the step is visible (was 45, the Event List value: felt too long after the old man starts collecting at about 10 s)
     public float canLeft = 165f, canDist = 0.45f;           // degrees left of where the head pointed at the start (180 = straight behind), metres
     public float binLeft = 205f, binDist = 0.55f;
@@ -26,7 +27,7 @@ public class CanBinScene : MonoBehaviour
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase;
     Transform canTr, binTr; Renderer canR; Renderer[] binRs; float[] binK; HandGrabInteractable grab;
     Vector3 origin, fwd, canFrom, canRest, binPos, dropFrom; MaterialPropertyBlock mpb;
-    float t, findTimer, rollT, canLit, binLit, vy, flash, doneAt, dropT; bool held, falling, binned, toCards;
+    float t, findTimer, rollT, canLit, binLit, vy, flash, doneAt, dropT; bool scene5, held, falling, binned, toCards;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Spawn()
@@ -44,13 +45,13 @@ public class CanBinScene : MonoBehaviour
             if (chain == null) chain = FindFirstObjectByType<ChainWrap>();
             if (head == null && Camera.main != null) head = Camera.main.transform;
         }
-        bool want = !SceneSequencer.TestBeat3Only && seq != null && head != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("2");
+        bool want = !SceneSequencer.TestBeat3Only && seq != null && head != null && seq.Index >= 0 && (seq.steps[seq.Index].name.StartsWith("2") || seq.steps[seq.Index].name.StartsWith("5"));
         if (want && phase == Phase.Idle && !seq.Busy) Begin();
         if (!want && phase != Phase.Idle) { End(); return; }
         if (phase == Phase.Idle) return;
 
         t += dt;
-        if (phase == Phase.Waiting && t >= beat2At) Appear();
+        if (phase == Phase.Waiting && t >= (scene5 ? scene5At : beat2At)) Appear();
         if (phase == Phase.Rolling)
         {
             rollT = Mathf.Min(1f, rollT + dt / 1.1f);
@@ -62,7 +63,7 @@ public class CanBinScene : MonoBehaviour
         }
         if (phase == Phase.Resting)
         {
-            if (!binned && chain != null && chain.Broken) grab.enabled = true;       // the hands are free: the can can be grabbed
+            if (!binned && ((chain != null && chain.Broken) || scene5)) grab.enabled = true;       // the hands are free: the can can be grabbed
             if (falling && !held)
             {
                 vy -= 9.8f * dt;
@@ -76,7 +77,7 @@ public class CanBinScene : MonoBehaviour
                 canTr.position = Vector3.Lerp(dropFrom, binPos + Vector3.up * 0.3f, Mathf.SmoothStep(0f, 1f, dropT));   // down into the hollow
                 if (dropT >= 1f) canTr.gameObject.SetActive(false);
                 flash = Mathf.MoveTowards(flash, 0f, dt / 0.8f);
-                if (!toCards && t >= doneAt + afterBin) { toCards = true; Log("the can is in the bin: to the cards"); seq.GoToCards(); }
+                if (!scene5 && !toCards && t >= doneAt + afterBin) { toCards = true; Log("the can is in the bin: to the cards"); seq.GoToCards(); }
             }
         }
         if (binTr.gameObject.activeSelf)
@@ -94,6 +95,7 @@ public class CanBinScene : MonoBehaviour
     // the can, the bin and the grab components are made in the dark and kept hidden until the beat starts
     void Begin()
     {
+        scene5 = seq.steps[seq.Index].name.StartsWith("5");
         t = 0f; rollT = 0f; canLit = binLit = flash = 0f; held = falling = binned = toCards = false;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
