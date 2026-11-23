@@ -73,6 +73,8 @@ public class ParticleFigure : MonoBehaviour
     PlayableGraph graph; AnimationClipPlayable playable; AnimationPlayableOutput aout; Animator animator;
     ParticleSystemRenderer prend; Material pmat; float lastBrightness = -1f;
     Transform[] bone; Vector3[] local;             // per particle: its bone and its offset in that bone's space
+    public BodySurface body;                         // when set (BodyLibrary.Apply sets it with the character as `model`), the particles sit on that body's real surface instead of on tubes
+    Transform[] bone2; Vector3[] local2; float[] w2;   // surface bodies: a second bone blended in by w2 (0 = none)
     ParticleSystem ps; ParticleSystem.Particle[] parts;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
@@ -103,6 +105,7 @@ public class ParticleFigure : MonoBehaviour
             playable = AnimationClipPlayable.Create(graph, clip);
             aout = AnimationPlayableOutput.Create(graph, "anim", anim);
             aout.SetSourcePlayable(playable);
+            clipTime = startTime; playable.SetTime(startTime);   // normally 0; a figure that carries on from another scene starts part way into its clip
             graph.Evaluate(0f);                             // the bones take the clip's first pose before the particles are bound
             var hips = anim.GetBoneTransform(HumanBodyBones.Hips);   // mocap carries the performer's studio position: start the clip with the hips over the figure's position
             if (hips != null) Skeleton.position += new Vector3(position.x - hips.position.x, 0f, position.z - hips.position.z);
@@ -115,6 +118,7 @@ public class ParticleFigure : MonoBehaviour
     // scatter the particles over the limb segments, each stored in the space of the bone it belongs to
     void Bind(Animator anim)
     {
+        if (body != null && body.Count > 0) { BindSurface(anim); StandOnFloor(); return; }
         float total = 0f;
         foreach (var s in Body) total += s.weight;
         foreach (var b in Blobs) total += b.weight;
@@ -149,10 +153,35 @@ public class ParticleFigure : MonoBehaviour
         }
         bone = bl.ToArray(); local = ll.ToArray();
 
-        // stand the figure on the floor: move the whole skeleton so the lowest particle rests on groundY
+        StandOnFloor();
+    }
+
+    // stand the figure on the floor: move the whole skeleton so the lowest particle rests on groundY
+    void StandOnFloor()
+    {
         float lowest = float.MaxValue;
-        for (int i = 0; i < bone.Length; i++) lowest = Mathf.Min(lowest, bone[i].TransformPoint(local[i]).y);
+        for (int i = 0; i < bone.Length; i++) lowest = Mathf.Min(lowest, Pos(i).y);
         Skeleton.position += Vector3.up * (groundY + particleSize * 0.5f - lowest);
+    }
+    Vector3 Pos(int i)
+    {
+        var p = bone[i].TransformPoint(local[i]);
+        if (w2 != null && w2[i] > 0f) p = Vector3.Lerp(p, bone2[i].TransformPoint(local2[i]), w2[i]);
+        return p;
+    }
+
+    // particles on the baked surface of the body: a random run of the baked points (so two figures of one body differ), each on its bone (and a second bone for the joints)
+    void BindSurface(Animator anim)
+    {
+        int n = Mathf.Min(particleCount, body.Count), start = Random.Range(0, body.Count), c = body.Count;
+        bone = new Transform[n]; local = new Vector3[n]; bone2 = new Transform[n]; local2 = new Vector3[n]; w2 = new float[n];
+        var hips = anim.GetBoneTransform(HumanBodyBones.Hips);
+        for (int i = 0; i < n; i++)
+        {
+            int k = (start + i) % c;
+            bone[i] = anim.GetBoneTransform((HumanBodyBones)body.boneA[k]) ?? hips; local[i] = body.offA[k];
+            if (body.wB[k] > 0f) { bone2[i] = anim.GetBoneTransform((HumanBodyBones)body.boneB[k]) ?? hips; local2[i] = body.offB[k]; w2[i] = body.wB[k]; }
+        }
     }
 
     void BuildSystem()
@@ -177,7 +206,9 @@ public class ParticleFigure : MonoBehaviour
 
     // switch to another clip (a fall, then reaching on the ground, then a dismissive wave): the new clip starts where the figure is,
     // with its hips over the hips of the pose it replaces. A hard cut, no blend.
-    Vector3[] blendFrom; float blend = 1f; float[] sizes0;
+    public float startTime = 0f;                    // seconds into the clip where it starts (to carry on a pose from another scene)
+    public float gather = 1f, gatherRadius = 3f; bool gathering;      // 0..1: the particles come together from scattered spots (1 = in place)
+    Vector3[] blendFrom, scatter; float blend = 1f; float[] sizes0;
     public void Play(AnimationClip next, bool loopIt = true)
     {
         if (next == null || !graph.IsValid()) return;
@@ -211,15 +242,19 @@ public class ParticleFigure : MonoBehaviour
             for (int i = 0; i < parts.Length; i++) blendFrom[i] = parts[i].position;
             blend = 0f;
         }
+        if (!Tick()) return;                                 // far figures pose and redraw only every updateEvery frames (crowds)
         playable.SetTime(clipTime);
         graph.Evaluate(0f);
     }
+    public int updateEvery = 1; int tickPhase = -1;         // 1 = every frame; 3 = every third frame (the particles keep their last positions in between)
+    bool Tick() { if (updateEvery <= 1) return true; if (tickPhase < 0) tickPhase = Random.Range(0, 64); return (Time.frameCount + tickPhase) % updateEvery == 0; }
 
     void LateUpdate()
     {
         if (ps == null) return;
+        if (!Tick()) return;
         float low = float.MaxValue, high = float.MinValue;
-        for (int i = 0; i < parts.Length; i++) { parts[i].position = bone[i].TransformPoint(local[i]); low = Mathf.Min(low, parts[i].position.y); high = Mathf.Max(high, parts[i].position.y); }
+        for (int i = 0; i < parts.Length; i++) { parts[i].position = Pos(i); low = Mathf.Min(low, parts[i].position.y); high = Mathf.Max(high, parts[i].position.y); }
         float lift = groundY + particleSize * 0.5f - low;   // keep the lowest particle on the floor every frame: kneeling and lying clips touch the ground instead of floating
         for (int i = 0; i < parts.Length; i++) parts[i].position += Vector3.up * lift;
         if (blend < 1f)                                     // a clip switch: ease every particle from where it was to where the new pose puts it
@@ -228,6 +263,14 @@ public class ParticleFigure : MonoBehaviour
             float k = Mathf.SmoothStep(0f, 1f, blend);
             for (int i = 0; i < parts.Length; i++) parts[i].position = Vector3.Lerp(blendFrom[i], parts[i].position, k);
         }
+        if (gather < 1f)                                    // assembling: every particle flies in from a random spot within gatherRadius of the figure
+        {
+            if (scatter == null || scatter.Length != parts.Length) { scatter = new Vector3[parts.Length]; for (int i = 0; i < scatter.Length; i++) scatter[i] = Random.insideUnitSphere * gatherRadius; }
+            float g = Mathf.SmoothStep(0f, 1f, gather);
+            for (int i = 0; i < parts.Length; i++) { parts[i].position = Vector3.Lerp(parts[i].position + scatter[i], parts[i].position, g); parts[i].startSize = sizes0[i] * Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.85f, 1f, g)); }   // hidden until almost in place
+            gathering = true;
+        }
+        else if (gathering) { for (int i = 0; i < parts.Length; i++) parts[i].startSize = sizes0[i]; gathering = false; }
         if (cutBelowY > -900f)
             for (int i = 0; i < parts.Length; i++) parts[i].startSize = parts[i].position.y < cutBelowY ? 0f : sizes0[i];
         HighestY = high + lift;

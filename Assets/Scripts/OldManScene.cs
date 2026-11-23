@@ -28,8 +28,8 @@ public class OldManScene : MonoBehaviour
     public Color bag = new Color(0.55f, 0.22f, 0.04f);      // placeholder bag: a dimmer brown cylinder lying on its side
     public float litFull = 35f, litFade = 75f;            // degrees from where the head points: fully lit inside, dark outside
     public float dismissAfterLook = 2f, dismissLatest = 25f;   // "Don't bother": after this long looking at him (and at least 6 s after the fall), or this long after the fall at the latest
-    public float oldManLeft = 65f, oldManAt = 0.85f;       // where he lies: degrees left of where the head pointed as the beat began, and metres away
-    public float bagLeft = 50f, bagAt = 0.7f;
+    public float oldManLeft = 65f, oldManDist = 1.15f;       // where he lies: degrees left of where the head pointed as the beat began, and metres away
+    public float bagLeft = 50f, bagDist = 0.95f;
     public float footLeft = 22f, footDist = 0.5f;           // the orange at the player's feet
     public float toesLeft = 8f, toesDist = 0.6f;             // and one closer still, almost at the toes
     public float receiveHoldAt = 0.5f;                      // 0..1: how far into the receive clip he gets (hand out) before he waits for the orange
@@ -39,6 +39,8 @@ public class OldManScene : MonoBehaviour
 
     public string Status => phase == Phase.Idle ? null : $"phase={phase} t={t:0.0} lit={(figure != null ? figure.brightness : 0f):0.00} look={dwell:0.0}s freed={(freed ? 1 : 0)} given={(given ? 1 : 0)} held={held}";
 
+    // where this beat put its things (world positions), for the street scenes that follow: the man, his bag and the oranges stay exactly there while the street forms round the player
+    public static bool HasPlaced; public static Vector3 PlacedOldMan, PlacedBag; public static readonly List<Vector3> PlacedOranges = new List<Vector3>();
     enum Phase { Idle, Dark, Falling, Down, Dismissed }
     class Orange
     {
@@ -54,9 +56,11 @@ public class OldManScene : MonoBehaviour
     Vector3 origin, fwd, oldManPos; MaterialPropertyBlock mpb;
     AnimationClip receiving; bool offering; int held; float dismissedAt; bool dismissed; float t, fallAt, dwell, findTimer, freedAt, givenAt; bool scene5, spilled, looked, warned, freed, given, toCards;
 
+    public static AnimationClip PlacedClip; public static bool PlacedLoop; public static float PlacedTime, PlacedBright = 1f;   // what he was doing last frame, so the street can carry on from that pose
     void Update()
     {
         float dt = Time.deltaTime;
+        if (figure != null && figure.ClipTime >= 0f) { PlacedClip = figure.clip; PlacedLoop = figure.loop; PlacedTime = figure.ClipTime; PlacedBright = figure.brightness; }
         if ((findTimer -= dt) <= 0f)
         {
             findTimer = 1f;
@@ -124,7 +128,7 @@ public class OldManScene : MonoBehaviour
         if (!scene5) seq.deferBreak = true;                   // the break does not jump to the cards by itself in this scene
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
-        oldManPos = At(oldManLeft, oldManAt);
+        oldManPos = At(oldManLeft, oldManDist); PlacedOldMan = oldManPos; HasPlaced = true; PlacedOranges.Clear();
         mpb = new MaterialPropertyBlock();
 
         var prefab = Resources.Load<GameObject>("Prefab/ParticleFigure");
@@ -133,13 +137,14 @@ public class OldManScene : MonoBehaviour
         figure = go.GetComponent<ParticleFigure>();
         figure.clip = fall; figure.loop = false; figure.position = oldManPos; figure.groundY = 0f;
         figure.playing = false; figure.brightness = 0f;       // set before its Start runs next frame
+        BodyLibrary.Apply(figure, false);                      // the old man on a real male body surface (if the bodies are baked)
 
         var mat = Resources.Load<Material>("OrangeSphere");
         var b = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         Destroy(b.GetComponent<Collider>());
         bagTr = b.transform; bagR = b.GetComponent<Renderer>();
         bagTr.localScale = new Vector3(0.16f, 0.13f, 0.16f);
-        bagTr.position = At(bagLeft, bagAt) + Vector3.up * 0.08f;
+        bagTr.position = At(bagLeft, bagDist) + Vector3.up * 0.08f; PlacedBag = bagTr.position;
         bagTr.rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * Quaternion.Euler(0f, 0f, 90f);   // lying on its side
         Prepare(bagR, mat);
         b.SetActive(false);
@@ -157,7 +162,7 @@ public class OldManScene : MonoBehaviour
                     foreach (var r in rests) ok &= Flat(rest - r).magnitude > 0.14f;
                     if (ok) break;
                 }
-            rests.Add(rest);
+            rests.Add(rest); PlacedOranges.Add(rest);
             var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             s.SetActive(false);                                   // components are added while inactive so the SDK injections land before Awake and Start
             s.GetComponent<SphereCollider>().radius = 1f;         // 0.08 m: easier to catch with a hand than the 0.04 m sphere

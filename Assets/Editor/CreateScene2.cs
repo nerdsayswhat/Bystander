@@ -18,7 +18,11 @@ public static class CreateScene2
     {
         if (!EditorPrefs.GetBool(Key) && !File.Exists(Dst)) EditorApplication.delayCall += Create;
         // a scene made before a part existed is brought up to date by itself (the same operation as the menu): Beat 3 is missing from an older Scene 2.unity
-        else if (File.Exists(Dst) && !File.ReadAllText(Dst).Contains("cower:") || !File.ReadAllText(Dst).Contains("idleMan:")) EditorApplication.delayCall += Create;
+        else if (File.Exists(Dst))
+        {
+            var text = File.ReadAllText(Dst);                                                       // an older Scene 2.unity is brought up to date by itself: a part or a street clip list is missing
+            if (!text.Contains("cower:") || !text.Contains("idleMan:") || !text.Contains("scaredWalk:") || !text.Contains("walkMix:") || !text.Contains("talkClips:") || !text.Contains("cowerClip:")) EditorApplication.delayCall += Create;
+        }
     }
 
     [MenuItem("Bystander/Create Scene 2")]
@@ -57,6 +61,22 @@ public static class CreateScene2
         }
         cards.idleMan = ClipAt("Assets/Animations/Mixamo/standing_idle_1.fbx"); cards.idleWoman = ClipAt("Assets/Animations/Mixamo/standing_idle_2.fbx");
         EditorUtility.SetDirty(cards);
+        var street = scene.GetRootGameObjects().Select(g => g.GetComponent<StreetScene>()).FirstOrDefault(c => c != null);
+        if (street == null)
+        {
+            var go5 = new GameObject("StreetScene");
+            SceneManager.MoveGameObjectToScene(go5, scene);
+            street = go5.AddComponent<StreetScene>();
+        }
+        street.idle = ClipAt("Assets/Animations/Mixamo/standing_idle_1.fbx"); street.fallen = ClipAt("Assets/Animations/Mixamo/lying_in_pain.fbx");
+        street.cowerClip = beat3.cower; street.idle2 = ClipAt("Assets/Animations/Mixamo/standing_idle_2.fbx"); street.idle3 = ClipAt("Assets/Animations/Mixamo/standing_idle_3.fbx"); street.lookUp = ClipAt("Assets/Animations/Mixamo/looking_up.fbx");
+        street.pickUp = ClipAt("Assets/Animations/Mixamo/pick_up.fbx"); street.walk = ClipAt("Assets/Animations/Mixamo/walking_medium_pace.fbx"); street.walkOld = ClipAt("Assets/Animations/Mixamo/old_man_walk.fbx"); street.gather = Clip("oldman_gather_loop");
+        const string M = "Assets/Animations/Mixamo/";
+        street.talkClips = new[] { ClipAt(M + "Talking.fbx"), ClipAt(M + "Talking (1).fbx"), ClipAt(M + "Talking (2).fbx"), ClipAt(M + "Talking (3).fbx") }; street.textClips = new[] { ClipAt(M + "Texting While Standing.fbx") };
+        street.runClips = new[] { ClipAt(M + "Running.fbx"), ClipAt(M + "Running (1).fbx") }; street.sitClips = new[] { ClipAt(M + "Sitting Talking Looking left.fbx"), ClipAt(M + "Sitting Talking looking right.fbx") };
+        street.walkMix = new[] { street.walk, ClipAt(M + "Walking While Texting.fbx"), ClipAt(M + "Walking With Shopping Bag.fbx") }; street.arguing = ClipAt(M + "Standing Arguing.fbx");
+        street.kneel = ClipAt("Assets/Animations/Mixamo/kneeling.fbx"); street.stabbed = Clip("stabbed_ground_loop"); street.scaredWalk = Clip("Woman_scared_walk_loop");
+        EditorUtility.SetDirty(street);
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         if (!wasOpen) EditorSceneManager.CloseScene(scene, true);

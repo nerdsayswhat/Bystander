@@ -16,8 +16,8 @@ public class WomanDogScene : MonoBehaviour
     public AnimationClip cower, getUp, walkAway;
     public float scene5At = 40f;                            // scene 5: seconds into the step (author 2026-11-20: scene 2 was 50, a little faster)
     public float beat3At = 50f;                             // seconds after the step is visible
-    public float womanAt = -25f, womanRange = 0.8f;         // degrees left of where the head pointed at the start (negative = right), metres
-    public float dogAt = -115f, dogRange = 0.95f;           // renamed so stale saved values are dropped: about 1.2 m between them
+    public float womanAt = -25f, womanAway = 1.1f;         // degrees left of where the head pointed at the start (negative = right), metres
+    public float dogAt = -115f, dogAway = 1.25f;           // renamed so stale saved values are dropped: about 1.2 m between them
     public float womanTweak = 0f;                            // fine-tune: extra turn in degrees on top of "right hand towards the dog" (negative = anticlockwise seen from above); renamed value kept 0
     public float ballSize = 0.04f, ballRest = 0.04f, litFull = 35f, litFade = 75f;
     public Color woman = new Color(0.06f, 0.012f, 0.16f);   // x emission 10 = (0.6, 0.12, 1.6): purple, blue clips to full so it stays purple
@@ -41,9 +41,11 @@ public class WomanDogScene : MonoBehaviour
             new GameObject("WomanDogScene").AddComponent<WomanDogScene>();
     }
 
+    public static AnimationClip PlacedClip; public static bool PlacedLoop; public static float PlacedTime, PlacedBright = 1f;   // what she was doing last frame, so the street can carry on from that pose
     void Update()
     {
         float dt = Time.deltaTime;
+        if (womanFig != null && womanFig.ClipTime >= 0f) { PlacedClip = womanFig.clip; PlacedLoop = womanFig.loop; PlacedTime = womanFig.ClipTime; PlacedBright = womanFig.brightness; }
         if ((findTimer -= dt) <= 0f)
         {
             findTimer = 1f;
@@ -99,7 +101,7 @@ public class WomanDogScene : MonoBehaviour
         t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = false;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
-        womanPos = At(womanAt, womanRange); dogPos = At(dogAt, dogRange);
+        womanPos = At(womanAt, womanAway); dogPos = At(dogAt, dogAway); PlacedWoman = womanPos; PlacedDog = dogPos; HasPlaced = true;
         awayDir = (womanPos - origin).normalized;                               // she walks directly away from the player
         mpb = new MaterialPropertyBlock();
 
@@ -109,6 +111,7 @@ public class WomanDogScene : MonoBehaviour
         womanFig = go.GetComponent<ParticleFigure>();
         womanFig.clip = cower; womanFig.loop = true; womanFig.position = womanPos; womanFig.groundY = 0f;
         womanFig.color = woman; womanFig.playing = false; womanFig.brightness = 0f;   // set before its Start runs next frame
+        BodyLibrary.Apply(womanFig, true);                                              // the woman on a real female body surface (if the bodies are baked)
 
         var dg = new GameObject("Dog");
         dg.transform.position = dogPos;
@@ -188,6 +191,7 @@ public class WomanDogScene : MonoBehaviour
         Log("scene 2 beat 3 ends");
     }
 
+    public static bool HasPlaced; public static Vector3 PlacedWoman, PlacedDog;     // for the street scenes that follow: the woman and the dog stay exactly there
     Vector3 At(float leftDeg, float dist) => origin + Quaternion.AngleAxis(-leftDeg, Vector3.up) * fwd * dist;
     static void Log(string msg) => Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} womandog {msg}");
 }

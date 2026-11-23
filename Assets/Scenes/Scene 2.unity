@@ -314,6 +314,7 @@ MonoBehaviour:
   toesDist: 0.6
   receiveHoldAt: 0.5
   giveReach: 0.55
+  scene5Start: 0
   afterGive: 6
   freedTimeout: 60
 --- !u!4 &256359863
@@ -479,6 +480,100 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2089019798}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &745694573
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 745694575}
+  - component: {fileID: 745694574}
+  m_Layer: 0
+  m_Name: StreetScene
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &745694574
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 745694573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe6fc2df967068d4283474d7ff45412f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StreetScene
+  talkClips:
+  - {fileID: -203655887218126122, guid: b006a0f0d00a6404eaa2e32c5389bc07, type: 3}
+  - {fileID: -203655887218126122, guid: e620b4872e86bb3429a6602a00b1142d, type: 3}
+  - {fileID: -203655887218126122, guid: 83d97c3554ef27843a789c7969495cfd, type: 3}
+  - {fileID: -203655887218126122, guid: 1deefe1fbd5fd8649a6395ad7ed59557, type: 3}
+  textClips:
+  - {fileID: -203655887218126122, guid: 3d4f272ed8e6a4e4b9d825127c91d478, type: 3}
+  runClips:
+  - {fileID: -203655887218126122, guid: 0662190613be1ed478042e85e4888a0a, type: 3}
+  - {fileID: -203655887218126122, guid: fa30f607c1c9f384e8ad58b6999ab9a8, type: 3}
+  sitClips:
+  - {fileID: -203655887218126122, guid: fa552c6d08d3c124398697a0cc05b19e, type: 3}
+  - {fileID: -203655887218126122, guid: 3210658aad22ed3438a3e77427c1a379, type: 3}
+  walkMix:
+  - {fileID: -203655887218126122, guid: e8f862f43a7796b429389559649e2f1d, type: 3}
+  - {fileID: -203655887218126122, guid: 0c6107f1f38873d46a86524cc7dbdab1, type: 3}
+  - {fileID: -203655887218126122, guid: 3ede6a420ee959749a6b190338ea7bd5, type: 3}
+  arguing: {fileID: -203655887218126122, guid: ce5fc2835abb2e048a9d53bfe8aff537, type: 3}
+  cowerClip: {fileID: -6073943067415944435, guid: 719affa9dc254c9980c59dfab8c72b89, type: 3}
+  idle: {fileID: -203655887218126122, guid: 75e4fc248632fb042802e89a518f067f, type: 3}
+  idle2: {fileID: -203655887218126122, guid: 72b9f92aca1c7b74bb7116046312e775, type: 3}
+  idle3: {fileID: -203655887218126122, guid: 255601ee64af86648bf923c7a11af064, type: 3}
+  lookUp: {fileID: -203655887218126122, guid: e8512c16b9427224b9a04d3cebc196d7, type: 3}
+  pickUp: {fileID: -203655887218126122, guid: 8041b071a57dd9348b7b41a077118421, type: 3}
+  walk: {fileID: -203655887218126122, guid: e8f862f43a7796b429389559649e2f1d, type: 3}
+  walkOld: {fileID: -203655887218126122, guid: 72d61867c4b0d5d499da1d649bbf7e91, type: 3}
+  gather: {fileID: 5049311812212820980, guid: cbacb17127a744eb91f064027f0628e6, type: 3}
+  fallen: {fileID: -203655887218126122, guid: 5c3e079724d14e36a5f3f92563161f0f, type: 3}
+  stabbed: {fileID: -3624944161746604280, guid: 916e203a178d470a80b9e719e18e300d, type: 3}
+  kneel: {fileID: -203655887218126122, guid: ff6de960088c4d0682d1f47712d165f8, type: 3}
+  scaredWalk: {fileID: -6532737091423763639, guid: 9175956322f743ebb9f3c6d7ff2b1297, type: 3}
+  viewHeight: 10
+  riseTime: 6
+  columns: 90
+  walkerCount: 130
+  standerCount: 60
+  lineBright: 0.9
+  fadeIn: 2.5
+  liftDelay: 3
+  riseSeconds: 16
+  people: {r: 0.004, g: 0.05, b: 0.16, a: 1}
+  helper: {r: 0.004, g: 0.05, b: 0.16, a: 1}
+  woman: {r: 0.06, g: 0.012, b: 0.16, a: 1}
+  growDelay: 0.3
+  growSpread: 9
+  growTime: 3
+  linesAtOnce: 3
+  buildTime: 3
+  detailTime: 1.2
+  gatherTime: 2.5
+--- !u!4 &745694575
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 745694573}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &782246716
 GameObject:
@@ -760,14 +855,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardsScene
   idleMan: {fileID: -203655887218126122, guid: 75e4fc248632fb042802e89a518f067f, type: 3}
   idleWoman: {fileID: -203655887218126122, guid: 72b9f92aca1c7b74bb7116046312e775, type: 3}
-  juliaAt: 25
-  endlessAt: 33
+  juliaPops: 12
+  endlessFrom: 20
   chainsAt: 65
   cardDist: 1.1
   juliaTurn: 38
-  figureScale: 0.28
+  figureZoom: 0.62
   man: {r: 0.004, g: 0.05, b: 0.16, a: 1}
   woman: {r: 0.06, g: 0.012, b: 0.16, a: 1}
+  cardCount: 400
+  waves: 4
+  waveEvery: 7
 --- !u!4 &1077919528
 Transform:
   m_ObjectHideFlags: 0
@@ -1485,6 +1583,7 @@ MonoBehaviour:
   cower: {fileID: -6073943067415944435, guid: 719affa9dc254c9980c59dfab8c72b89, type: 3}
   getUp: {fileID: 6222814551187783768, guid: 4330b0aca73b42a9a09b657cdf68294c, type: 3}
   walkAway: {fileID: 7712312189825091305, guid: e307b56f406a4647a24a456c0ce8d3ae, type: 3}
+  scene5At: 40
   beat3At: 50
   womanAt: -25
   womanRange: 0.8
@@ -1525,3 +1624,4 @@ SceneRoots:
   - {fileID: 256359863}
   - {fileID: 2122156182}
   - {fileID: 1077919528}
+  - {fileID: 745694575}

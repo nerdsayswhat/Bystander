@@ -38,6 +38,7 @@ public class SceneSequencer : MonoBehaviour
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
+    public static readonly string TestStartsAt = "2";   // test start: a build begins at the first step whose name starts with this ("3" the street, "6" the street again, "4" the cards...); "" = the whole film from the warning
     public static readonly bool TestScene5Only = false;   // build for testing scene 5 only: starts at the "5 ..." step (no chains), editor or build. Set false for the real film.
     public static readonly bool TestCardsOnly = false;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
     public bool showLabel = true;                // placeholder labels on or off
@@ -46,6 +47,7 @@ public class SceneSequencer : MonoBehaviour
     public bool gaveOrange, binnedCan, calmedDog;
 
     public int Index { get; private set; } = -1;
+    public float StepTime => timer;               // seconds since the current step became visible
     public bool Busy => busy;                      // a fade is running: the step has been entered but is not yet visible
     public bool ChainsBrokenByPlayer { get; private set; }
     public bool ShowChainsLine => !ChainsBrokenByPlayer;   // scene 4 shows "WERE THE CHAINS REALLY BINDING YOU?" only if they were never broken
@@ -98,6 +100,8 @@ public class SceneSequencer : MonoBehaviour
         int first = 0;
         if (TestBeat3Only || Application.isEditor && SceneManager.GetActiveScene().name == "Scene 2")   // only in the editor: a build of Scene 2 runs the whole film from the warning
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("2")) { first = i; break; }
+        if (TestStartsAt.Length > 0)
+            for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith(TestStartsAt)) { first = i; break; }
         if (TestScene5Only)
             for (int i = 0; i < steps.Length; i++) if (steps[i].name.StartsWith("5")) { first = i; break; }
         if (TestCardsOnly)
@@ -148,9 +152,10 @@ public class SceneSequencer : MonoBehaviour
     IEnumerator Go(int i)
     {
         busy = true;
+        bool seamless = Index >= 0 && steps[Index].name.StartsWith("2") && steps[i].name.StartsWith("3");   // the chains were never broken: scene 2 runs on into the street without going dark
         if (Index >= 0)
         {
-            yield return FadeTo(1f);
+            if (!seamless) yield return FadeTo(1f);
             steps[Index].onExit?.Invoke();               // null when the steps come from the code defaults, not the Inspector
         }
         Index = i; timer = 0f;
@@ -161,10 +166,10 @@ public class SceneSequencer : MonoBehaviour
             chains.armed = s.breakWindow;
             if (i == noChainsStep) chains.Release();      // never broken: they disperse quietly as scene 5 begins (no-op if already broken)
         }
-        label.text = showLabel && i >= firstPlaceholder && !s.name.StartsWith("4") && !s.name.StartsWith("5") && s.name != "End" && s.name != "Credits" ? s.name : "";   // the cards (step "4"), scene 5, End and Credits are built
+        label.text = showLabel && i >= firstPlaceholder && !s.name.StartsWith("4") && !s.name.StartsWith("5") && s.name != "End" && s.name != "Credits" && !s.name.StartsWith("3") && !s.name.StartsWith("6") ? s.name : "";   // the cards (step "4"), scene 5, End and Credits are built
         if (s.name.StartsWith("5")) gaveOrange = binnedCan = calmedDog = false;   // scene 6 shows what the player did in scene 5, not in scene 2
         s.onEnter?.Invoke();
-        yield return FadeTo(0f);
+        if (!seamless) yield return FadeTo(0f);
         busy = false;
         if (pending >= 0) { int j = pending; pending = -1; GoTo(j); }
     }

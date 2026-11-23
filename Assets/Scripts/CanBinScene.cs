@@ -14,8 +14,8 @@ public class CanBinScene : MonoBehaviour
 {
     public float scene5At = 20f;                            // scene 5: seconds into the step (author 2026-11-20: scene 2 was 25, a little faster)
     public float beat2At = 25f;                             // seconds after the step is visible (was 45, the Event List value: felt too long after the old man starts collecting at about 10 s)
-    public float canLeft = 165f, canDist = 0.45f;           // degrees left of where the head pointed at the start (180 = straight behind), metres
-    public float binLeft = 205f, binDist = 0.55f;
+    public float canLeft = 165f, canAway = 0.7f;           // degrees left of where the head pointed at the start (180 = straight behind), metres
+    public float binLeft = 205f, binAway = 0.8f;
     public Color can = new Color(1f, 0.08f, 0.06f), bin = new Color(0.6f, 0.6f, 0.62f);   // grey
     public float emission = 1.6f;
     public float litFull = 35f, litFade = 75f;
@@ -102,7 +102,7 @@ public class CanBinScene : MonoBehaviour
         mpb = new MaterialPropertyBlock();
         var mat = Resources.Load<Material>("OrangeSphere");
 
-        binPos = At(binLeft, binDist);
+        binPos = At(binLeft, binAway); PlacedBin = binPos; HasPlaced = true;
         var b = new GameObject("TrashBin");
         binTr = b.transform; binTr.position = binPos;
         // a hollow trash can, 0.5 m tall, 0.30 m across at the foot and 0.38 m at the open top: a thin wall (outer face, darker inner face), a
@@ -136,8 +136,8 @@ public class CanBinScene : MonoBehaviour
         canTr = c.transform; canR = c.GetComponent<Renderer>();
         canTr.localScale = new Vector3(0.065f, 0.06f, 0.065f);                  // a soda can: 0.065 m across, 0.12 m long
         canTr.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 90f);    // lying on its side
-        canRest = At(canLeft, canDist) + Vector3.up * 0.033f;
-        canFrom = At(canLeft + 8f, canDist + 1.1f) + Vector3.up * 0.033f;       // rolls in from further behind
+        canRest = At(canLeft, canAway) + Vector3.up * 0.033f; PlacedCan = canRest;
+        canFrom = At(canLeft + 8f, canAway + 1.1f) + Vector3.up * 0.033f;       // rolls in from further behind
         canTr.position = canFrom;
         Prepare(canR, mat);
         c.AddComponent<BreakTarget>();
@@ -252,6 +252,7 @@ public class CanBinScene : MonoBehaviour
         Log("scene 2 beat 2 ends");
     }
 
+    public static bool HasPlaced; public static Vector3 PlacedCan, PlacedBin;      // for the street scenes that follow: the can and the bin stay exactly there
     Vector3 At(float leftDeg, float dist) => origin + Quaternion.AngleAxis(-leftDeg, Vector3.up) * fwd * dist;
     static void Log(string msg) => Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} cans {msg}");
 }
