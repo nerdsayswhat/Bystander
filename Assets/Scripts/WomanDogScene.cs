@@ -18,7 +18,8 @@ public class WomanDogScene : MonoBehaviour
     public float beat3At = 50f;                             // seconds after the step is visible
     public float womanAt = -25f, womanAway = 1.1f;         // degrees left of where the head pointed at the start (negative = right), metres
     public float dogAt = -115f, dogAway = 1.25f;           // renamed so stale saved values are dropped: about 1.2 m between them
-    public float womanTweak = 0f;                            // fine-tune: extra turn in degrees on top of "right hand towards the dog" (negative = anticlockwise seen from above); renamed value kept 0
+    public float womanFar = 3.6f, dogGap = 1.2f, dogRun = 1.4f, dogStop = 1.0f;   // she is 3.6 m out (new fields: the saved scene overrides womanAway); the dog is only 1.2 m from her; he runs to the player at 3.5 m/s once the ball is taken. The ball stays at the old midpoint (womanAway/dogAway)
+    public float womanTweak = 0f;                           // fine-tune: extra turn in degrees on top of "right hand towards the dog" (negative = anticlockwise seen from above); renamed value kept 0
     public float ballSize = 0.04f, ballRest = 0.04f, litFull = 35f, litFade = 75f;
     public Color woman = new Color(0.06f, 0.012f, 0.16f);   // x emission 10 = (0.6, 0.12, 1.6): purple, blue clips to full so it stays purple
     public Color ball = new Color(0.05f, 0.9f, 0.1f);       // x ballEmission: green
@@ -30,7 +31,7 @@ public class WomanDogScene : MonoBehaviour
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase;
     ParticleFigure womanFig; ParticleDog dog; Transform ballTr; Renderer ballR; HandGrabInteractable grab;
-    Vector3 origin, fwd, womanPos, dogPos, awayDir; MaterialPropertyBlock mpb;
+    Vector3 origin, fwd, womanPos, dogPos, awayDir, ballPos; MaterialPropertyBlock mpb;
     float stride, t, findTimer, womanLit, dogLit, ballLit, vy, calmedAt; bool scene5, held, falling, calmed, walking, toCards, warned;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -77,6 +78,16 @@ public class WomanDogScene : MonoBehaviour
                 womanFig.Play(walkAway, true); walking = true; stride = walkAway.averageSpeed.magnitude; if (stride < 0.1f) stride = walkSpeed; Log($"the woman walks away at {stride:0.00} m/s (clip speed {walkAway.averageSpeed.magnitude:0.00}, length {walkAway.length:0.0}s)");
             }
             if (walking) womanFig.Skeleton.position += awayDir * stride * dt;
+            if (dog != null)                                                     // the dog comes running to the player and stops about 0.6 m away, with a small hop in his stride
+            {
+                var me = new Vector3(head.position.x, 0f, head.position.z);
+                var from = dog.transform.position; from.y = 0f;
+                var stop = me + (from - me).normalized * dogStop;
+                bool running = (stop - from).sqrMagnitude > 0.0025f;
+                var np = Vector3.MoveTowards(from, stop, dogRun * dt);
+                np.y = running ? 0.04f * Mathf.Abs(Mathf.Sin(t * 16f)) : 0f;
+                dog.transform.position = np;
+            }
             if (!scene5 && !toCards && t >= calmedAt + afterCalm) { toCards = true; Log("the dog is calm and the woman has gone: to the cards"); seq.GoToCards(); }
         }
         // lit only where the player looks; once calmed they stay lit so the ball is not alone in the dark
@@ -98,10 +109,13 @@ public class WomanDogScene : MonoBehaviour
             return;
         }
         scene5 = seq.steps[seq.Index].name.StartsWith("5");
-        t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = false;
+        t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = false; HasYaw = false;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
-        womanPos = At(womanAt, womanAway); dogPos = At(dogAt, dogAway); PlacedWoman = womanPos; PlacedDog = dogPos; HasPlaced = true;
+        ballPos = (At(womanAt, womanAway) + At(dogAt, dogAway)) * 0.5f;          // the ball stays where it always was
+        womanPos = At(womanAt, womanFar);
+        var toOldDog = At(dogAt, dogAway) - At(womanAt, womanAway); toOldDog.y = 0f;
+        dogPos = womanPos + toOldDog.normalized * dogGap; PlacedWoman = womanPos; PlacedDog = dogPos; HasPlaced = true;
         awayDir = (womanPos - origin).normalized;                               // she walks directly away from the player
         mpb = new MaterialPropertyBlock();
 
@@ -125,7 +139,7 @@ public class WomanDogScene : MonoBehaviour
         s.SetActive(false);                                                      // components are added while inactive so the SDK injections land before Awake and Start
         s.name = "GreenBall";
         s.transform.localScale = Vector3.one * ballSize * 2f;
-        s.transform.position = (womanPos + dogPos) * 0.5f + Vector3.up * ballRest;
+        s.transform.position = ballPos + Vector3.up * ballRest;
         ballTr = s.transform; ballR = s.GetComponent<Renderer>();
         Prepare(ballR, mat);
         s.AddComponent<BreakTarget>();
@@ -148,7 +162,7 @@ public class WomanDogScene : MonoBehaviour
         var face = Quaternion.AngleAxis(-90f, Vector3.up) * toDog.normalized;
         var sk = womanFig.Skeleton;
         sk.RotateAround(womanFig.Bone(HumanBodyBones.Hips).position, Vector3.up, Vector3.SignedAngle(Vector3.ProjectOnPlane(sk.forward, Vector3.up), face, Vector3.up) + womanTweak);
-        awayDir = face;                                                         // she walks the way she faces
+        awayDir = face; PlacedYaw = sk.eulerAngles.y; HasYaw = true;            // she walks the way she faces; the street copies this exact turn
         womanFig.playing = true; dog.barking = true; ballTr.gameObject.SetActive(true);
         phase = Phase.Shown;
         Log("a woman cowers from a barking dog on the right, a ball lies between them");
@@ -183,7 +197,9 @@ public class WomanDogScene : MonoBehaviour
 
     void End()
     {
-        if (womanFig != null) Destroy(womanFig.gameObject);
+        // scene 2 into the street (no break, the step after is "3 ..."): the lady is handed over alive, the same object, and the street adopts her
+        bool toStreet = womanFig != null && !scene5 && phase == Phase.Shown && seq != null && seq.Index >= 0 && seq.steps[seq.Index].name.StartsWith("3");
+        if (womanFig != null) { if (toStreet) HandOver = womanFig; else Destroy(womanFig.gameObject); }
         if (dog != null) Destroy(dog.gameObject);
         if (ballTr != null) Destroy(ballTr.gameObject);
         if (seq != null) seq.deferBreak = false;
@@ -191,6 +207,8 @@ public class WomanDogScene : MonoBehaviour
         Log("scene 2 beat 3 ends");
     }
 
+    public static ParticleFigure HandOver;                                          // the lady, alive, for the street to adopt (set in End, cleared by StreetScene)
+    public static bool HasYaw; public static float PlacedYaw;                      // the turn her skeleton ended with in Appear (world yaw, degrees)
     public static bool HasPlaced; public static Vector3 PlacedWoman, PlacedDog;     // for the street scenes that follow: the woman and the dog stay exactly there
     Vector3 At(float leftDeg, float dist) => origin + Quaternion.AngleAxis(-leftDeg, Vector3.up) * fwd * dist;
     static void Log(string msg) => Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} womandog {msg}");

@@ -13,7 +13,7 @@ public class ParticleDog : MonoBehaviour
     public float brightness = 1f;                            // 0..1, 0 hides him (lit only where the player looks)
     public bool barking = true;
     public Transform lookAt;                                 // when not barking he turns to face this (the player's head)
-    public float barkEvery = 1.4f;
+    public float barkEvery = 0.9f;
     public float Flare { get; private set; }
 
     enum Part : byte { Body, Chest, Neck, Head, Jaw, Ear, Tail }
@@ -105,12 +105,12 @@ public class ParticleDog : MonoBehaviour
             var d = lookAt.position - transform.position; d.y = 0f;
             if (d.sqrMagnitude > 0.01f) transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), 120f * dt);
         }
-        float time = Time.time, tremble = (barking ? 1f : 0.3f) * 0.0015f;
-        var head = Quaternion.Euler(barking ? -28f * e + 3f : -6f, 0f, 0f);                           // up and back on a bark; raised, looking up at the player when calm
-        var jaw = Quaternion.Euler(18f * e, 0f, 0f);
-        var tail = Quaternion.Euler(0f, barking ? Mathf.Sin(time * 9f) * 7f : Mathf.Sin(time * 13f) * 30f, 0f);   // a happy wag when calm
+        float time = Time.time, tremble = (barking ? 3f : 0.3f) * 0.0015f;
+        var head = Quaternion.Euler(barking ? 14f - 6f * e : -6f, 0f, 0f);                            // aggressive: head held low and thrust at her, snapping lower on a bark; raised and looking up at the player when calm
+        var jaw = Quaternion.Euler(30f * e, 0f, 0f);
+        var tail = Quaternion.Euler(0f, barking ? Mathf.Sin(time * 25f) * 2f : Mathf.Sin(time * 13f) * 30f, 0f);   // stiff, quivering tail when aggressive; a happy wag when calm
         var hp = To(HeadPivot); var jp = To(JawPivot); var tp = To(TailPivot);
-        var push = new Vector3(0f, 0f, 0.02f * e); var recoil = new Vector3(0f, 0f, -0.015f * e);
+        var push = new Vector3(0f, 0f, 0.06f * e); var recoil = new Vector3(0f, 0f, barking ? 0.05f * e : 0f);   // every bark lunges the whole body forward at the woman
         var rot = transform.rotation; var pos = transform.position;
         for (int i = 0; i < loc.Length; i++)
         {

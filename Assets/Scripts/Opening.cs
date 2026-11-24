@@ -44,7 +44,7 @@ public class Opening : MonoBehaviour
 
     public float settle = 3f, roundGap = 1.5f, absorbTime = 1.5f, finishPause = 3f;   // seconds: dark before the first round, between rounds, dissolve, dark after the last
     public float nudgeAfter = 10f, roundCap = 20f;           // seconds before a held phrase goes in by itself; before a round dissolves whatever is left
-    public float grabRadius = 0.16f, heartRadius = 0.2f;     // metres: the fist must close this close to the phrase; this close to the heart it dissolves
+    public float grabRadius = 0.3f, heartRadius = 0.2f;     // metres: the fist must close this close to the phrase; this close to the heart it dissolves
     public float fistLimit = 0.12f;                          // mean fingertip distance from the wrist (m) below which the hand counts as closed
     public float heartDrop = 0.3f, heartAhead = 0.1f;        // the heart: this far below the head and ahead of it (head yaw only)
     public Color phraseColor = new Color(0.75f, 0.62f, 0.35f), hotColor = new Color(1f, 0.85f, 0.5f);   // soft gold, brighter near the heart

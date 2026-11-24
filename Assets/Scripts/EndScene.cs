@@ -11,6 +11,7 @@ using UnityEngine.UI;
 public class EndScene : MonoBehaviour
 {
     public string didNothingLine = "WHAT WAS HOLDING YOU\nBACK THIS TIME?";
+    public string oneActionLine = "WHAT ABOUT\nTHE REST?";                                    // exactly one of the three things done: a placeholder until the author writes the words (2026-11-23)
     public string actedLine = "WAS IT EVER\nTHE CHAINS?";                                      // acted in scene 5 and never broke the chains in scene 2 (the author, 2026-11-21, for now)
     public string brokeLine = "WAS HELPING\nEVER LOCKED?";                                    // broke the chains in scene 2 and acted again in scene 5 (the author's choice, 2026-11-21, from the idea "helping does not require permission")
     public string[] credits =
@@ -69,9 +70,11 @@ public class EndScene : MonoBehaviour
         if (credits) s = string.Join("\n", credits_());
         else
         {
-            bool acted = seq.gaveOrange || seq.binnedCan || seq.calmedDog, broke = seq.ChainsBrokenByPlayer;
-            s = !acted ? didNothingLine : broke ? brokeLine : actedLine;
-            Log(!acted ? "the player did nothing in scene 5: what was holding you back" : broke ? "the player broke the chains in scene 2 and acted in scene 5: broke line" : "the player acted in scene 5 without ever breaking the chains: was it ever the chains");
+            // author 2026-11-23: by how many of the three things the player did (orange given, can binned, dog calmed), in scene 2 after breaking the chains or in scene 5:
+            // none = didNothingLine; exactly one = oneActionLine; two or all three = the ending (brokeLine if they broke the chains, else actedLine)
+            int did = (seq.gaveOrange ? 1 : 0) + (seq.binnedCan ? 1 : 0) + (seq.calmedDog ? 1 : 0); bool broke = seq.ChainsBrokenByPlayer;
+            s = did == 0 ? didNothingLine : did == 1 ? oneActionLine : broke ? brokeLine : actedLine;
+            Log($"the player did {did} of the three things (chains broken: {broke}): {s.Replace("\n", " ")}");
         }
         go = new GameObject(credits ? "Credits" : "EndLine", typeof(RectTransform), typeof(Canvas));
         go.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;

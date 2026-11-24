@@ -72,6 +72,7 @@ public partial class StreetScene : MonoBehaviour
         float lf = Mathf.Clamp01((t - liftDelay) / Mathf.Max(riseSeconds, 0.1f)); lf = lf * lf * (3f - 2f * lf);
         float drop = viewHeight * (1f - lf);
         root.transform.position = new Vector3(0f, drop, 0f);
+        if (adoptLady) AdoptLady();
         foreach (var f in figs) if (f != null) f.groundY = baseY + drop;
         if (growing) Grow();
         if (assembling) Assemble();
@@ -80,7 +81,7 @@ public partial class StreetScene : MonoBehaviour
         float ez = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 4f));
         float kf = keep ? Mathf.Lerp(OldManScene.PlacedBright, 1f, ez) : k, kw = keep ? Mathf.Lerp(WomanDogScene.PlacedBright, 1f, ez) : k;
         if (dog != null) dog.brightness = kw;
-        if (bagR2 != null) { mpb.SetColor(BaseColor, new Color(0.55f, 0.22f, 0.04f, 1f) * 1.6f * kf); bagR2.SetPropertyBlock(mpb); }
+        if (bagRs2 != null) for (int i = 0; i < bagRs2.Length; i++) { mpb.SetColor(BaseColor, new Color(OldManScene.BagTan.r, OldManScene.BagTan.g, OldManScene.BagTan.b, 1f) * 1.1f * bagKs2[i] * kf); bagRs2[i].SetPropertyBlock(mpb); }
         if (ballR2 != null) { mpb.SetColor(BaseColor, new Color(0.08f, 1.4f, 0.16f, 1f) * kw); ballR2.SetPropertyBlock(mpb); }
         SpawnPeople(); MovePeds(dt);
         mpb.SetColor(BaseColor, Color.white * lineBright * k); lines.SetPropertyBlock(mpb);
@@ -90,7 +91,7 @@ public partial class StreetScene : MonoBehaviour
         foreach (var r in fruit) { mpb.SetColor(BaseColor, new Color(0.9f * 1.6f, 0.3f * 1.6f, 0.04f * 1.6f, 1f) * kf); r.SetPropertyBlock(mpb); }
         if (womanFig != null && womanFig.Skeleton != null)                                 // the scared woman crosses the street, in place and moved along
         {
-            womanFig.Skeleton.position += right * 0.7f * dt;                              // 80 m in 115 s: she is crossing the whole street
+            womanFig.Skeleton.position += right * 0.7f * dt;                              // she starts 26 m to the left and 7 m ahead, and crosses in front of the player (passing at about 37 s)
         }
     }
 
@@ -595,9 +596,8 @@ public partial class StreetScene : MonoBehaviour
         if (keep && !cleanNear)                                                                                       // the bag, the can and the bin stay where scene 2 put them
         {
             var mat2 = Resources.Load<Material>("OrangeSphere");
-            var bag = GameObject.CreatePrimitive(PrimitiveType.Cylinder); Destroy(bag.GetComponent<Collider>()); bag.transform.SetParent(root.transform, true);
-            bag.transform.position = Ground(OldManScene.PlacedBag, 0.08f) ; bag.transform.localScale = new Vector3(0.16f, 0.13f, 0.16f); bag.transform.rotation = Quaternion.AngleAxis(60f, Vector3.up) * Quaternion.Euler(0f, 0f, 90f);
-            bagR2 = bag.GetComponent<Renderer>(); bagR2.sharedMaterial = mat2; bagR2.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; bagR2.receiveShadows = false;
+            var bag = CanBinScene.PaperBag(root.transform, mat2, out bagRs2, out bagKs2);
+            bag.transform.position = Ground(OldManScene.PlacedBag, 0.05f); bag.transform.rotation = Quaternion.AngleAxis(60f, Vector3.up) * Quaternion.Euler(0f, 0f, 90f);
             var can = GameObject.CreatePrimitive(PrimitiveType.Cylinder); Destroy(can.GetComponent<Collider>()); can.transform.SetParent(root.transform, true);
             can.transform.position = Ground(CanBinScene.PlacedCan, 0.033f); can.transform.localScale = new Vector3(0.065f, 0.06f, 0.065f); can.transform.rotation = Quaternion.Euler(0f, 200f, 90f);
             var cr = can.GetComponent<Renderer>(); cr.sharedMaterial = mat2; cr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; cr.receiveShadows = false; fruit.Add(cr);
@@ -610,21 +610,7 @@ public partial class StreetScene : MonoBehaviour
                 var p = spot + (right * Mathf.Cos(ang) + fwd * Mathf.Sin(ang)) * r;
                 Litter(new Vector3(p.x, baseY, p.z), (float)rnd.NextDouble(), 1.8f);
             }
-        if (acted)                                                                                                       // the clean lit circle: rings round the feet, brighter than the street
-        {
-            var rv = new List<Vector3>(); var ri = new List<int>();
-            foreach (float r in new[] { 0.5f, 0.85f, 1.2f })
-                for (int i = 0; i < 48; i++)
-                {
-                    float a0 = i * Mathf.PI * 2f / 48f, a1 = (i + 1) * Mathf.PI * 2f / 48f;
-                    ri.Add(rv.Count); rv.Add(floor + (right * Mathf.Cos(a0) + fwd * Mathf.Sin(a0)) * r); ri.Add(rv.Count); rv.Add(floor + (right * Mathf.Cos(a1) + fwd * Mathf.Sin(a1)) * r);
-                }
-            var go = new GameObject("CleanCircle"); ringGo = go; go.SetActive(false);   // not under the street root (it stays at the player's own floor): switched on with the street
-            var m = new Mesh { name = "CleanCircle" }; m.SetVertices(rv); m.SetIndices(ri, MeshTopology.Lines, 0); m.RecalculateBounds();
-            go.AddComponent<MeshFilter>().sharedMesh = m;
-            ring = go.AddComponent<MeshRenderer>(); ring.sharedMaterial = Resources.Load<Material>("OrangeSphere");
-            ring.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; ring.receiveShadows = false;
-        }
+        // author 2026-11-23: the clean lit rings round the player's feet were removed; the cleared area (nearClean) is the only sign of what the player did
     }
 
     // the bystanders: still columns (a head and a body of 36 particles) in clusters on the roads, and the baby in the stroller
@@ -697,12 +683,14 @@ public partial class StreetScene : MonoBehaviour
         }
         if (scene6 && !seq.calmedDog && !cleanNear && scaredWalk != null)
         {
-            womanFig = Fig(scaredWalk, P(-40f, 0f, -14f), woman, 1500, false, 1, 1);                            // the lady keeps her purple-pink
+            womanFig = Fig(scaredWalk, P(-26f, 0f, 7f), woman, 1500, false, 1, 1);                            // the lady keeps her purple-pink
+            peds.Add(new Ped { f = womanFig, dir = right, speed = 0f });                                       // turn her once to face the way she walks (she faced the player and crossed sideways)
         }
         if (!cleanNear)                                                                           // the lady and the dog of scene 2: she cowers from the barking dog (scene 3), a green ball lies between them
         {
             var lp = keep ? Ground(WomanDogScene.PlacedWoman) : P(7f, 0f, 3f); var dp = keep ? Ground(WomanDogScene.PlacedDog) : P(9.4f, 0f, 4.4f); var toDog = dp - lp; toDog.y = 0f;   // where scene 2 had them
-            if (!scene6 && cowerClip != null)
+            if (!scene6 && cowerClip != null && keep) { adoptLady = true; adoptWait = 0f; }             // scene 2's own lady object is handed over (AdoptLady), not copied
+            else if (!scene6 && cowerClip != null)
             {
                 bool cont2 = keep && WomanDogScene.PlacedClip != null;                                   // she carries on from the pose she had in scene 2
                 var lady = Fig(cont2 ? WomanDogScene.PlacedClip : cowerClip, lp, woman, 2500, false, 1, 1, keep);
@@ -725,8 +713,30 @@ public partial class StreetScene : MonoBehaviour
     struct Spec { public AnimationClip clip; public Vector3 pos, dir; public float speed, yaw; public int count, sex; public bool keepFacing; }   // sex: 0 random, 1 male, 2 female; count 1000 or more: a hero (full particles)
     ParticleFigure oldManFig, ladyFig;
     readonly HashSet<ParticleFigure> keptFigs = new HashSet<ParticleFigure>();
+    bool adoptLady; float adoptWait;
+    // the lady of scene 2 is the same object in the street: WomanDogScene.End hands her over instead of destroying her, and she joins the street root without any change of pose,
+    // facing, size or light. If she never arrives (1.5 s), a copy is made as before.
+    void AdoptLady()
+    {
+        var f = WomanDogScene.HandOver;
+        if (f == null)
+        {
+            if ((adoptWait += Time.deltaTime) > 1.5f && cowerClip != null)
+            {
+                adoptLady = false;
+                var lp = Ground(WomanDogScene.PlacedWoman); var dp = Ground(WomanDogScene.PlacedDog);
+                var lady = Fig(cowerClip, lp, woman, 2500, false, 1, 1, true);
+                ladyFig = lady; KeepFig(lady);
+                peds.Add(new Ped { f = lady, speed = 0f, hasTarget = true, target = dp });
+            }
+            return;
+        }
+        adoptLady = false; WomanDogScene.HandOver = null;
+        f.transform.SetParent(root.transform, true);
+        f.gather = 1f; figs.Add(f); figDelay.Add(-100f); keptFigs.Add(f); ladyFig = f;
+    }
     void KeepFig(ParticleFigure f) { keptFigs.Add(f); figDelay[figs.IndexOf(f)] = -100f; f.gather = 1f; }     // present at once: no assembling, full brightness
-    float prevNear = 0.01f; bool cleanNear, keep; Renderer bagR2;   // keep: scene 2's old man, can, bin, woman and dog stay exactly where scene 2 put them
+    float prevNear = 0.01f; bool cleanNear, keep; Renderer[] bagRs2; float[] bagKs2;   // keep: scene 2's old man, can, bin, woman and dog stay exactly where scene 2 put them
     Vector3 Ground(Vector3 w, float y = 0f) => new Vector3(w.x, baseY + y, w.z); const float nearClean = 25f;
     readonly List<Vector3[]> benchSpots = new List<Vector3[]>();
     readonly List<Spec> queue = new List<Spec>(); readonly List<Ped> peds = new List<Ped>();
@@ -817,7 +827,7 @@ public partial class StreetScene : MonoBehaviour
             {
                 p.init = true; var sk = p.f.Skeleton; var hips = p.f.Bone(HumanBodyBones.Hips); if (hips == null) continue;
                 Vector3 face = p.dir != Vector3.zero ? p.dir : Quaternion.Euler(0f, p.yaw, 0f) * Vector3.forward;
-                if (p.hasTarget) { var toT = p.target - hips.position; toT.y = 0f; face = Quaternion.AngleAxis(-90f, Vector3.up) * toT.normalized; }       // the same rule as scene 2: her right hand towards the dog
+                if (p.hasTarget) { var toT = p.target - p.f.position; toT.y = 0f; face = Quaternion.AngleAxis(-90f, Vector3.up) * toT.normalized; if (keep && WomanDogScene.HasYaw) face = Quaternion.Euler(0f, WomanDogScene.PlacedYaw, 0f) * Vector3.forward; }       // author 2026-11-23: scene 2 is right, so with scene 2 on record she takes exactly its final turn; otherwise scene 2's rule (right hand towards the dog)
                 sk.RotateAround(hips.position, Vector3.up, Vector3.SignedAngle(Vector3.ProjectOnPlane(sk.forward, Vector3.up), face, Vector3.up));      // turn about her hips so she stays where she is
             }
             if (p.speed <= 0f) continue;
@@ -840,7 +850,9 @@ public partial class StreetScene : MonoBehaviour
     void End()
     {
         foreach (var f in figs) if (f != null) Destroy(f.gameObject);
-        figs.Clear(); fruit.Clear(); queue.Clear(); peds.Clear(); oldManFig = null; ladyFig = null; dog = null; ballR2 = null; bagR2 = null;
+        if (WomanDogScene.HandOver != null) { Destroy(WomanDogScene.HandOver.gameObject); WomanDogScene.HandOver = null; }     // a lady handed over but never adopted
+        adoptLady = false;
+        figs.Clear(); fruit.Clear(); queue.Clear(); peds.Clear(); oldManFig = null; ladyFig = null; dog = null; ballR2 = null; bagRs2 = null;
         if (buildCo != null) { StopCoroutine(buildCo); buildCo = null; }
         if (root != null) Destroy(root);
         if (ringGo != null) { Destroy(ringGo); ringGo = null; }

@@ -25,18 +25,27 @@ public class ChainWrap : MonoBehaviour
     public float sag = 0.06f;                                     // near taut: a slack chain reads as a rope
     public float reach = 0.35f;                                  // max anchor -> hand distance before the hand is held
     public float stretchLook = 2f;                                // how much the links themselves elongate and spread apart while stretched (1 = just the extra reach)
-    public float stretch = 0.12f;                                 // extra reach (m) the chain gives, only while the hand is aimed at a BreakTarget
+    public float reachExtra = 0.2f;                                 // extra reach (m) the chain gives, only while the hand is aimed at a BreakTarget
     public float pullRange = 0.25f;                               // extra real-hand pull (m) for full strain
     public float tremble = 0.002f;                                // peak shake (m) when the hand is pulled out in any OTHER direction; grows with the pull
-    public float trembleTarget = 0.01f;                           // peak shake (m) when the pull is aimed at a BreakTarget: much more violent
+    public float shakeAimed = 0.03f;                              // peak shake (m) when the pull is aimed at a BreakTarget: much more violent (renamed from trembleTarget 0.01 so the saved scene does not override it)
+    public float restDim = 0.45f;                                 // the unstretched chain is this fraction of its normal brightness (new field, so the saved scene does not override it)
+    Color Rest => new Color(linkColor.r * restDim, linkColor.g * restDim, linkColor.b * restDim, 1f);
     public float tremorStart = 0.75f;                             // fraction of reach where shaking and colour start
     public float awayStart = 0.3f, awayFull = 0.45f;              // hand distance from the body axis (m) where resistance fades in; nothing inside awayStart
     public float bodyBack = 0.08f;                                // chest sits this far behind the head
     public float follow = 2f;                                     // how fast the wrap re-centres on the player (1/s)
 
     public bool armed = true;                                     // the sequencer switches this off outside the break window
-    public float holdFor = 1.0f;                                  // seconds of deliberate grab (fist while pulling) to break
-    public float reachDist2 = 0.45f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (a hand hanging at the hip is 0.4 m or more above a floor orange; bending down to one gets within 0.2 m)
+    // author 2026-11-23 (reviews: too much kneeling, bend a lot instead): the reach radius is wider (a hand at knee or shin height counts, so nobody has to go to the floor), a deep bend is
+    // required (the head must be bendNeeded below its own standing height, so it asks for effort but not for kneeling), and the hold and the pull are longer and stronger to match.
+    // The three fields were RENAMED (breakHold, reachDist, pullNeeded) because Scene 2.unity holds the old values and would override new defaults.
+    public float breakHold = 1.0f;                                // seconds of deliberate grab (pulling, bent over) to break (was holdFor 1.0)
+    public float reachDist = 0.6f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (was reachDist2 0.45)
+    public float bendNeeded = 0.35f;                              // m: the head must be this far below the highest it has been (the player's own standing, or seated, height). 0 = no posture needed: the accessible setting for a seated player
+    float standY; bool bent = true;
+    public float torsoFollowBend = 0.7f;                          // the chest chains sink this fraction of how far the head drops (the chest goes down less than the head)
+    float torsoDrop;
     public float reachCone = 40f;                                // degrees: the pull must point this close to a BreakTarget
     public bool requireFist = false;                              // also demand a closed hand (see fistDistance)
     public float fistDistance = 0.12f;                            // mean fingertip distance from the wrist (m) below which the hand counts as closed
@@ -47,7 +56,7 @@ public class ChainWrap : MonoBehaviour
     public float emissionRest = 1.5f, emissionPull = 10f;         // self-lit brightness: normal at rest, very bright glowing at full pull (above ~3 the greys clip to white)
     public int ringPoints = 30;                                   // particles per link: dense enough to read as a solid chain
     public bool renderSolid = false;                              // draw the solid link meshes too (for comparing)
-    public float minPull = 0.12f;                                // how far past the limit (0..1) the hand must pull for the grab to count
+    public float pullNeeded = 0.2f;                              // how far past the limit (0..1) the hand must pull for the grab to count (was minPull 0.12)
     public float breakDuration = 1.2f, scatterSpeed = 3.5f;       // violent: the particles burst outwards and shrink over this long
     public UnityEvent onBroken;                                   // the sequencer listens: jump to the cards
 
@@ -204,10 +213,10 @@ public class ChainWrap : MonoBehaviour
     void FillParticles()
     {
         float rt = Mathf.Max(left.resist, right.resist);
-        pmat.SetColor(BaseColor, Color.white * Mathf.Lerp(emissionRest, emissionPull, rt));   // the glow builds with the pull
-        var ct = Color.Lerp(linkColor, strainColor, rt);
-        var cl = Color.Lerp(linkColor, strainColor, left.resist);
-        var cr = Color.Lerp(linkColor, strainColor, right.resist);
+        pmat.SetColor(BaseColor, Color.white * Mathf.Lerp(emissionRest * restDim, emissionPull, rt));   // the glow builds with the pull
+        var ct = Color.Lerp(Rest, strainColor, rt);
+        var cl = Color.Lerp(Rest, strainColor, left.resist);
+        var cr = Color.Lerp(Rest, strainColor, right.resist);
         int k = 0;
         foreach (var r in srcs)
         {
@@ -218,7 +227,8 @@ public class ChainWrap : MonoBehaviour
             {
                 float a = 2f * Mathf.PI * j / r.n;
                 float y = r.thick ? (j % 2 == 0 ? 0.25f : -0.25f) : r.y;   // alternate above and below so a link has thickness
-                parts[k].position = r.t.TransformPoint(new Vector3(Mathf.Cos(a) * 0.5f, y, Mathf.Sin(a) * 0.5f * (r.thick ? el : 1f)));
+                var pp = r.t.TransformPoint(new Vector3(Mathf.Cos(a) * 0.5f, y, Mathf.Sin(a) * 0.5f * (r.thick ? el : 1f)));
+                parts[k].position = pp;
                 parts[k].startColor = c;
                 size[k] = on ? particleSize : 0f;
                 parts[k].startSize = size[k];
@@ -295,6 +305,7 @@ public class ChainWrap : MonoBehaviour
     void Update()
     {
         if (left.links == null) return;
+        if (Camera.main != null) { float hy = Camera.main.transform.position.y; standY = Mathf.Max(standY, hy); bent = bendNeeded <= 0f || standY - hy >= bendNeeded; }
         if (Broken) { Scatter(); return; }
         if (hidden)
         {
@@ -312,13 +323,16 @@ public class ChainWrap : MonoBehaviour
         LeftStrain = UpdateSide(left);
         RightStrain = UpdateSide(right);
         LogHaze();
-        if (left.hold >= holdFor || right.hold >= holdFor) { Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
+        if (left.hold >= breakHold || right.hold >= breakHold) { Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} chain break: head {Camera.main.transform.position.y:0.00} m, {standY - Camera.main.transform.position.y:0.00} m below its highest ({standY:0.00}), needed {bendNeeded:0.00}"); Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
         float r = Mathf.Max(left.resist, right.resist);   // the whole chain lightens when either hand pulls
         float tr = Mathf.Max(left.shake, right.shake);   // and shakes with the harder-shaking hand
-        mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, r));
+        mpb.SetColor(BaseColor, Color.Lerp(Rest, strainColor, r));
+        // author 2026-11-23: bending down left the chest chains at standing height, so the head came down into them and they blocked the view. The wrap now sinks with the bend
+        // (torsoFollowBend of the head's drop); no fade near the eyes (author: not wanted).
+        torsoDrop = Mathf.Lerp(torsoDrop, torsoFollowBend * Mathf.Max(0f, topY - Camera.main.transform.position.y), 1f - Mathf.Exp(-10f * Time.deltaTime));
         for (int i = 0; i < torso.Length; i++)
         {
-            torso[i].position = body + torsoOff[i] + Random.insideUnitSphere * tr;
+            torso[i].position = body + torsoOff[i] + Vector3.down * torsoDrop + Random.insideUnitSphere * tr;
             torsoR[i].SetPropertyBlock(mpb);
         }
         FillParticles();
@@ -405,9 +419,9 @@ public class ChainWrap : MonoBehaviour
         float dist = d.magnitude, strain = 0f;
         // a reach is out in front: a hand down at the hip or behind the back points at the floor oranges too, but is not reaching
         s.fwd = NearestTarget(real); s.ang = MinAngle(s.anchor, d);
-        bool aimed = armed && s.fwd < reachDist2 && s.ang < reachCone;
+        bool aimed = armed && s.fwd < reachDist && s.ang < reachCone;
         s.aim = Mathf.MoveTowards(s.aim, aimed ? 1f : 0f, Time.deltaTime * 6f);   // blend (shake, stretch) so nothing jumps
-        float limit = reach + stretch * s.aim; s.dist = dist; s.lim = limit; s.fist = IsFist(s.synth, fistDistance);                       // the chain stretches a little when, and only when, reaching for the object
+        float limit = reach + reachExtra * s.aim; s.dist = dist; s.lim = limit; s.fist = IsFist(s.synth, fistDistance);                       // the chain stretches a little when, and only when, reaching for the object
         var end = real;
         if (dist > limit)
         {
@@ -423,10 +437,10 @@ public class ChainWrap : MonoBehaviour
         var off = real - body; off.y = 0f;
         s.resist = Mathf.InverseLerp(limit * tremorStart, limit + pullRange, dist) * Mathf.InverseLerp(awayStart, awayFull, off.magnitude);
         // deliberate reach: pulling past the limit towards a BreakTarget; the chain strains harder the longer it is held
-        s.hold = aimed && strain >= minPull && (!requireFist || IsFist(s.synth, fistDistance)) ? s.hold + Time.deltaTime : 0f;
-        s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / holdFor));
-        mpb.SetColor(BaseColor, Color.Lerp(linkColor, strainColor, s.resist));
-        s.shake = Mathf.Lerp(tremble, trembleTarget, s.aim) * s.resist;
+        s.hold = aimed && bent && strain >= pullNeeded && (!requireFist || IsFist(s.synth, fistDistance)) ? s.hold + Time.deltaTime : 0f;   // the chain still stretches and shakes when aimed; only the break itself needs the deep bend
+        s.resist = Mathf.Max(s.resist, Mathf.Clamp01(s.hold / breakHold));
+        mpb.SetColor(BaseColor, Color.Lerp(Rest, strainColor, s.resist));
+        s.shake = Mathf.Lerp(tremble, shakeAimed, s.aim) * s.resist;
         var mid = (s.anchor + end) * 0.5f + Vector3.down * sag * (1f - strain);
         float len = Mathf.Max((end - s.anchor).magnitude, 0.01f);   // ponytail: straight-line length approximates the arc
         float stretched = Mathf.Max(1f, len / reach);                // 1 at normal reach, above 1 while stretched

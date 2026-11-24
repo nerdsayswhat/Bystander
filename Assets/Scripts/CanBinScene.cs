@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Oculus.Interaction;
 using Oculus.Interaction.Grab;
 using Oculus.Interaction.GrabAPI;
@@ -25,7 +26,7 @@ public class CanBinScene : MonoBehaviour
     enum Phase { Idle, Waiting, Rolling, Resting }
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase;
-    Transform canTr, binTr; Renderer canR; Renderer[] binRs; float[] binK; HandGrabInteractable grab;
+    Transform canTr, binTr; Renderer canR; Renderer[] binRs; float[] binK; Color[] binC; HandGrabInteractable grab;
     Vector3 origin, fwd, canFrom, canRest, binPos, dropFrom; MaterialPropertyBlock mpb;
     float t, findTimer, rollT, canLit, binLit, vy, flash, doneAt, dropT; bool scene5, held, falling, binned, toCards;
 
@@ -77,13 +78,13 @@ public class CanBinScene : MonoBehaviour
                 canTr.position = Vector3.Lerp(dropFrom, binPos + Vector3.up * 0.3f, Mathf.SmoothStep(0f, 1f, dropT));   // down into the hollow
                 if (dropT >= 1f) canTr.gameObject.SetActive(false);
                 flash = Mathf.MoveTowards(flash, 0f, dt / 0.8f);
-                if (!scene5 && !toCards && t >= doneAt + afterBin) { toCards = true; Log("the can is in the bin: to the cards"); seq.GoToCards(); }
+                // author 2026-11-23: the can going in no longer jumps to the cards; the dog beat still follows (SceneSequencer.Advance)
             }
         }
         if (binTr.gameObject.activeSelf)
         {
             binLit = Mathf.MoveTowards(binLit, Lit(binTr.position + Vector3.up * 0.25f), 3f * dt);
-            for (int i = 0; i < binRs.Length; i++) Show(binRs[i], bin, binK[i] * emission * (1f + flash * 2f), Mathf.Max(binLit, flash));
+            for (int i = 0; i < binRs.Length; i++) Show(binRs[i], binC[i], binK[i] * emission * (1f + flash * 2f), Mathf.Max(binLit, flash));
         }
         if (canTr.gameObject.activeSelf)
         {
@@ -119,13 +120,28 @@ public class CanBinScene : MonoBehaviour
             (Ring(0.150f, 0.172f, 0.04f, 28), 1.2f),                       // top of the foot
             (Disc(0.172f, 0.001f, 28), 0.5f),                              // underside of the foot
         };
-        binRs = new Renderer[parts.Length]; binK = new float[parts.Length];
-        for (int i = 0; i < parts.Length; i++)
+        // litter piled inside the bin, from its floor (y 0.02) up to about 0.3 (the rim is at 0.5): mixed rubbish, each its own pale colour so the kinds read apart
+        var lie = Quaternion.Euler(0f, 0f, 90f);                                        // lays a Y-axis tube on its side
+        Quaternion Yaw(float d) => Quaternion.Euler(0f, d, 0f);
+        var trash = new (Mesh mesh, float k, Color c)[]
+        {
+            (Xf(Blob(0.035f, Vector3.zero, 1), new Vector3(-0.07f, 0.07f, 0.04f), Quaternion.identity, Vector3.one), 1.0f, new Color(0.9f, 0.9f, 0.85f)),     // crumpled paper
+            (Xf(Blob(0.030f, Vector3.zero, 2), new Vector3(0.07f, 0.065f, -0.04f), Quaternion.identity, Vector3.one), 0.8f, new Color(0.9f, 0.9f, 0.85f)),
+            (Xf(Blob(0.040f, Vector3.zero, 3), new Vector3(0f, 0.045f, 0f), Quaternion.identity, new Vector3(1.4f, 0.5f, 1.2f)), 1.0f, new Color(0.8f, 0.85f, 1f)),   // a flattened plastic bag
+            (Xf(Merge(Tube(0.032f, 0.032f, 0.12f, 14, false, -0.06f), Disc(0.032f, -0.06f, 14), Disc(0.032f, 0.06f, 14)), new Vector3(0f, 0.10f, 0.06f), Yaw(30f) * lie, Vector3.one), 1.2f, new Color(0.45f, 0.65f, 1f)),   // a soda can on its side
+            (Xf(Merge(Tube(0.028f, 0.028f, 0.12f, 14, false, -0.09f), Tube(0.028f, 0.010f, 0.05f, 14, false, 0.03f), Disc(0.028f, -0.09f, 14)), new Vector3(0f, 0.12f, -0.05f), Yaw(-50f) * lie, new Vector3(1f, 0.75f, 1f)), 1.3f, new Color(0.3f, 0.9f, 0.65f)),   // a bottle
+            (Xf(Merge(Tube(0.026f, 0.036f, 0.09f, 14, false, -0.045f), Tube(0.023f, 0.033f, 0.09f, 14, true, -0.045f), Disc(0.026f, -0.045f, 14)), new Vector3(-0.05f, 0.18f, -0.03f), Yaw(110f) * lie, Vector3.one), 1.2f, new Color(1f, 0.4f, 0.35f)),   // a paper cup
+            (Xf(Quad(0.18f, 0.12f), new Vector3(0.02f, 0.25f, 0f), Quaternion.Euler(8f, 25f, 6f), Vector3.one), 0.9f, new Color(0.8f, 0.75f, 0.62f)),                          // a sheet of newspaper
+            (Xf(Quad(0.10f, 0.07f), new Vector3(-0.05f, 0.27f, 0.03f), Quaternion.Euler(-6f, -35f, 5f), Vector3.one), 0.8f, new Color(0.9f, 0.9f, 0.85f)),                         // a scrap of paper
+        };
+        int np = parts.Length;
+        binRs = new Renderer[np + trash.Length]; binK = new float[np + trash.Length]; binC = new Color[np + trash.Length];
+        for (int i = 0; i < binRs.Length; i++)
         {
             var piece = new GameObject("Bin" + i, typeof(MeshFilter), typeof(MeshRenderer));
             piece.transform.SetParent(binTr, false);
-            piece.GetComponent<MeshFilter>().sharedMesh = parts[i].mesh;
-            binRs[i] = piece.GetComponent<MeshRenderer>(); binK[i] = parts[i].k;
+            piece.GetComponent<MeshFilter>().sharedMesh = i < np ? parts[i].mesh : trash[i - np].mesh;
+            binRs[i] = piece.GetComponent<MeshRenderer>(); binK[i] = i < np ? parts[i].k : trash[i - np].k; binC[i] = i < np ? bin : trash[i - np].c;
             Prepare(binRs[i], mat);
         }
         b.SetActive(false);
@@ -178,6 +194,33 @@ public class CanBinScene : MonoBehaviour
         }
     }
 
+    // the old man's paper grocery bag (scenes 2, 3, 5, 6): a hollow tapering sack 0.30 m long along local Y (closed foot at -0.15, open mouth at +0.15, rim folded over),
+    // centred on its own origin so it takes the same "lying on its side" rotation as the old cylinder. k = brightness of each piece (inside darker, rim brightest)
+    public static GameObject PaperBag(Transform parent, Material mat, out Renderer[] rs, out float[] ks)
+    {
+        // flat and boxy, not round (a round tapered tube read as a paper cup): local X is the thin way (up, when it lies on its side), Z the wide way
+        var parts = new (Mesh mesh, float k)[]
+        {
+            (Sack(0.040f, 0.075f, 0.052f, 0.085f, 0.30f, 24, false, -0.15f, 0.012f, 7, true), 1.0f),    // outer wall with a flat closed foot and an uneven torn top
+            (Sack(0.035f, 0.070f, 0.047f, 0.080f, 0.30f, 24, true, -0.15f, 0.012f, 7, false), 0.25f),   // inner wall, dark
+            (Sack(0.054f, 0.087f, 0.054f, 0.087f, 0.035f, 24, false, 0.115f, 0.012f, 7, false), 1.4f),  // the folded-over cuff at the mouth
+            (Sack(0.042f, 0.077f, 0.042f, 0.077f, 0.02f, 24, false, -0.12f, 0f, 1, false), 0.7f),       // the fold near the foot
+            (Merge(Quad4(-0.012f, 0.012f, -0.13f, 0.12f, 0.078f, 0.088f), Quad4(-0.012f, 0.012f, -0.13f, 0.12f, -0.078f, -0.088f)), 1.6f),   // the two gusset creases down the sides
+        };
+        var root = new GameObject("PaperBag");
+        if (parent != null) root.transform.SetParent(parent, false);
+        rs = new Renderer[parts.Length]; ks = new float[parts.Length];
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var piece = new GameObject("Bag" + i, typeof(MeshFilter), typeof(MeshRenderer));
+            piece.transform.SetParent(root.transform, false);
+            piece.GetComponent<MeshFilter>().sharedMesh = parts[i].mesh;
+            rs[i] = piece.GetComponent<MeshRenderer>(); ks[i] = parts[i].k;
+            Prepare(rs[i], mat);
+        }
+        return root;
+    }
+
     // mesh helpers for the bin; y0 lifts a band off the foot
     static Mesh Tube(float r0, float r1, float h, int n, bool inward, float y0 = 0f)
     {
@@ -221,6 +264,92 @@ public class CanBinScene : MonoBehaviour
         }
         return Make(v, t);
     }
+
+    // a lofted sack with a squarish (superellipse) cross-section: half-sizes a (X) and b (Z) at the foot (y0) and at the top (y0 + h); the top edge is uneven by `wave`
+    static Mesh Sack(float a0, float b0, float a1, float b1, float h, int n, bool inward, float y0, float wave, int seed, bool cap)
+    {
+        var v = new List<Vector3>(); var t = new List<int>();
+        for (int i = 0; i <= n; i++)
+        {
+            float ang = Mathf.PI * 2f * i / n, c = Mathf.Cos(ang), s = Mathf.Sin(ang);
+            float sx = Mathf.Sign(c) * Mathf.Sqrt(Mathf.Abs(c)), sz = Mathf.Sign(s) * Mathf.Sqrt(Mathf.Abs(s));
+            float w = wave * (0.6f * Mathf.Sin(3f * ang + seed) + 0.4f * Mathf.Sin(7f * ang + seed * 2.3f));
+            v.Add(new Vector3(a0 * sx, y0, b0 * sz)); v.Add(new Vector3(a1 * sx, y0 + h + w, b1 * sz));
+        }
+        for (int i = 0; i < n; i++)
+        {
+            int b00 = i * 2, t0 = i * 2 + 1, b01 = i * 2 + 2, t1 = i * 2 + 3;
+            if (!inward) { t.AddRange(new[] { b00, t0, t1, b00, t1, b01 }); } else { t.AddRange(new[] { b00, t1, t0, b00, b01, t1 }); }
+        }
+        if (cap)
+        {
+            int c0 = v.Count; v.Add(new Vector3(0f, y0, 0f));
+            for (int i = 0; i < n; i++) { t.AddRange(new[] { c0, i * 2 + 2, i * 2 }); t.AddRange(new[] { c0, i * 2, i * 2 + 2 }); }
+        }
+        return Make(v.ToArray(), t.ToArray());
+    }
+
+    static Mesh Quad4(float x0, float x1, float y0, float y1, float z0, float z1)     // a flat double-sided strip from (x0, y0, z0) to (x1, y1, z1)
+    {
+        var v = new[] { new Vector3(x0, y0, z0), new Vector3(x1, y0, z0), new Vector3(x0, y1, z1), new Vector3(x1, y1, z1) };
+        return Make(v, Dbl(new[] { 0, 2, 3, 0, 3, 1 }));
+    }
+
+    static Mesh Quad(float w, float d)                                                // a flat double-sided rectangle on the floor, centred
+    {
+        var v = new[] { new Vector3(-w / 2, 0, -d / 2), new Vector3(w / 2, 0, -d / 2), new Vector3(-w / 2, 0, d / 2), new Vector3(w / 2, 0, d / 2) };
+        return Make(v, Dbl(new[] { 0, 2, 3, 0, 3, 1 }));
+    }
+
+    static int[] Dbl(int[] t)                                                         // every triangle again, reversed: visible from both sides
+    {
+        var r = new int[t.Length * 2]; t.CopyTo(r, 0);
+        for (int i = 0; i < t.Length; i += 3) { r[t.Length + i] = t[i]; r[t.Length + i + 1] = t[i + 2]; r[t.Length + i + 2] = t[i + 1]; }
+        return r;
+    }
+
+    static Mesh Merge(params Mesh[] ms)
+    {
+        var v = new List<Vector3>(); var t = new List<int>();
+        foreach (var m in ms) { int o = v.Count; v.AddRange(m.vertices); foreach (var i in m.triangles) t.Add(i + o); }
+        return Make(v.ToArray(), t.ToArray());
+    }
+
+    static Mesh Xf(Mesh m, Vector3 pos, Quaternion rot, Vector3 scale)               // place a mesh: scale, then rotate, then move
+    {
+        var v = m.vertices;
+        for (int i = 0; i < v.Length; i++) v[i] = pos + rot * Vector3.Scale(v[i], scale);
+        return Make(v, m.triangles);
+    }
+
+    static Mesh Blob(float r, Vector3 c, int seed)                 // a crumpled lump: a bumpy low-poly ball
+    {
+        const int N = 10, M = 6;
+        var rnd = new System.Random(seed);
+        var v = new Vector3[N * (M - 1) + 2]; var t = new int[N * (M - 1) * 6];
+        v[0] = c + Vector3.down * r * 0.8f; v[v.Length - 1] = c + Vector3.up * r;
+        for (int j = 1; j < M; j++)
+            for (int i = 0; i < N; i++)
+            {
+                float a = Mathf.PI * 2f * i / N, p = Mathf.PI * j / M, k = r * (0.7f + 0.5f * (float)rnd.NextDouble());
+                v[1 + (j - 1) * N + i] = c + new Vector3(Mathf.Cos(a) * Mathf.Sin(p), Mathf.Cos(p), Mathf.Sin(a) * Mathf.Sin(p)) * k;
+            }
+        int n = 0;
+        for (int i = 0; i < N; i++)                                // double sided, so no winding worries
+        {
+            int i1 = (i + 1) % N;
+            n = Tri(t, n, 0, 1 + i, 1 + i1);
+            n = Tri(t, n, v.Length - 1, 1 + (M - 2) * N + i1, 1 + (M - 2) * N + i);
+            for (int j = 0; j < M - 2; j++)
+            {
+                int a0 = 1 + j * N + i, a1 = 1 + j * N + i1, b0 = a0 + N, b1 = a1 + N;
+                n = Tri(t, n, a0, b0, b1); n = Tri(t, n, a0, b1, a1);
+            }
+        }
+        return Make(v, Dbl(t));
+    }
+
+    static int Tri(int[] t, int n, int a, int b, int c) { t[n] = a; t[n + 1] = b; t[n + 2] = c; return n + 3; }
 
     static Mesh Make(Vector3[] v, int[] t)
     {

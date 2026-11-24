@@ -8,12 +8,15 @@ public class FpsCounter : MonoBehaviour
     public Vector3 offset = new Vector3(0f, -0.2f, 1f);    // metres in front of the eyes, below the centre
     public float window = 0.5f;                            // seconds per reading
 
+    public static readonly bool Show = false;              // author 2026-11-23: off for now (set true to see it in the headset); the fps lines in bystander_log.txt are unaffected
+
     Text text;
     float time, worst; int frames;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Spawn()
     {
+        if (!Show) return;
         var go = new GameObject("FpsCounter", typeof(RectTransform), typeof(Canvas));
         go.AddComponent<FpsCounter>();
     }

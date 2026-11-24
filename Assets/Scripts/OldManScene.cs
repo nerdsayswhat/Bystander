@@ -25,7 +25,8 @@ public class OldManScene : MonoBehaviour
     public float orangeRadius = 0.04f;
     public Color orange = new Color(1f, 0.32f, 0.03f);      // x orangeEmission: (1.6, 0.5, 0.05), which clips to orange on the headset and blooms like the figure's particles
     public float orangeEmission = 1.6f;
-    public Color bag = new Color(0.55f, 0.22f, 0.04f);      // placeholder bag: a dimmer brown cylinder lying on its side
+    public Color bagColor = new Color(0.8f, 0.56f, 0.28f);  // the paper bag: kraft tan (renamed: the saved scene held the old brown under "bag")
+    public static readonly Color BagTan = new Color(0.8f, 0.56f, 0.28f);
     public float litFull = 35f, litFade = 75f;            // degrees from where the head points: fully lit inside, dark outside
     public float dismissAfterLook = 2f, dismissLatest = 25f;   // "Don't bother": after this long looking at him (and at least 6 s after the fall), or this long after the fall at the latest
     public float oldManLeft = 65f, oldManDist = 1.15f;       // where he lies: degrees left of where the head pointed as the beat began, and metres away
@@ -52,9 +53,9 @@ public class OldManScene : MonoBehaviour
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase; ParticleFigure figure;
     readonly List<Orange> list = new List<Orange>();
-    Transform bagTr; Renderer bagR; float bagLit;
+    Transform bagTr; Renderer[] bagRs; float[] bagKs; float bagLit;
     Vector3 origin, fwd, oldManPos; MaterialPropertyBlock mpb;
-    AnimationClip receiving; bool offering; int held; float dismissedAt; bool dismissed; float t, fallAt, dwell, findTimer, freedAt, givenAt; bool scene5, spilled, looked, warned, freed, given, toCards;
+    AnimationClip receiving; bool offering; int held; float dismissedAt; bool dismissed; float t, fallAt, dwell, findTimer, freedAt, givenAt; bool scene5, spilled, looked, warned, freed, given, toCards, leaving;
 
     public static AnimationClip PlacedClip; public static bool PlacedLoop; public static float PlacedTime, PlacedBright = 1f;   // what he was doing last frame, so the street can carry on from that pose
     void Update()
@@ -124,7 +125,7 @@ public class OldManScene : MonoBehaviour
             return;
         }
         scene5 = seq.steps[seq.Index].name.StartsWith("5");
-        t = 0f; dwell = 0f; spilled = false; looked = false; freed = scene5; freedAt = 0f; given = false; toCards = false; dismissed = false; offering = false;   // scene 5 has no chains: the hands are free from the start
+        t = 0f; dwell = 0f; spilled = false; looked = false; freed = scene5; freedAt = 0f; given = false; toCards = false; leaving = false; dismissed = false; offering = false;   // scene 5 has no chains: the hands are free from the start
         if (!scene5) seq.deferBreak = true;                   // the break does not jump to the cards by itself in this scene
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
@@ -140,13 +141,10 @@ public class OldManScene : MonoBehaviour
         BodyLibrary.Apply(figure, false);                      // the old man on a real male body surface (if the bodies are baked)
 
         var mat = Resources.Load<Material>("OrangeSphere");
-        var b = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        Destroy(b.GetComponent<Collider>());
-        bagTr = b.transform; bagR = b.GetComponent<Renderer>();
-        bagTr.localScale = new Vector3(0.16f, 0.13f, 0.16f);
-        bagTr.position = At(bagLeft, bagDist) + Vector3.up * 0.08f; PlacedBag = bagTr.position;
+        var b = CanBinScene.PaperBag(null, mat, out bagRs, out bagKs);
+        bagTr = b.transform;
+        bagTr.position = At(bagLeft, bagDist) + Vector3.up * 0.05f; PlacedBag = bagTr.position;
         bagTr.rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * Quaternion.Euler(0f, 0f, 90f);   // lying on its side
-        Prepare(bagR, mat);
         b.SetActive(false);
 
         // the first two oranges are the ones at the player's feet (0.5 m and 0.28 m); the rest are spread over the floor between him and the player
@@ -243,12 +241,8 @@ public class OldManScene : MonoBehaviour
                 else o.tr.position = o.hand.position;
             }
         }
-        if (!scene5 && !toCards && ((given && list.Exists(x => x.arrived) && t >= givenAt + afterGive) || (!given && !seq.binnedCan && !seq.calmedDog && t >= freedAt + freedTimeout)))
-        {
-            toCards = true;
-            Log(given ? "the old man has his orange: to the cards" : "nothing was given: to the cards");
-            seq.GoToCards();
-        }
+        // author 2026-11-23: no jump to the cards from here any more. After the chains break the other beats of scene 2 still play (the can, then the dog); the cards come
+        // when the dog beat is done or the scene's time is up (SceneSequencer.Advance)
     }
 
     // pointer events from the SDK: Select = a hand took hold, Unselect or Cancel = the last hand let go
@@ -300,16 +294,19 @@ public class OldManScene : MonoBehaviour
     // lit only where the player looks (an orange in a hand is always lit)
     void Light(float dt)
     {
-        if (figure != null) figure.brightness = Mathf.MoveTowards(figure.brightness, offering || given ? 1f : Lit(oldManPos + Vector3.up * 0.3f), 3f * dt);   // while he takes an orange he stays lit, so it is not an orange floating in the dark
+        // author 2026-11-23: once he has taken his orange and the receive clip is over he fades out (about 3 s) with the orange in his hand; the rest of the scene carries on
+        if (!leaving && given && figure != null && receiving != null && list.Exists(x => x.arrived) && figure.ClipTime >= receiving.length - 0.05f) { leaving = true; Log("the old man has his orange: he fades out"); }
+        float fs = leaving ? 0.35f : 3f;
+        if (figure != null) figure.brightness = Mathf.MoveTowards(figure.brightness, leaving ? 0f : offering || given ? 1f : Lit(oldManPos + Vector3.up * 0.3f), fs * dt);   // while he takes an orange he stays lit, so it is not an orange floating in the dark
         if (bagTr.gameObject.activeSelf)
         {
-            bagLit = Mathf.MoveTowards(bagLit, Lit(bagTr.position), 3f * dt);
-            Show(bagR, bag, 1.2f * bagLit, bagLit);
+            bagLit = Mathf.MoveTowards(bagLit, leaving ? 0f : Lit(bagTr.position), (leaving ? 0.35f : 3f) * dt);   // the bag fades with him
+            for (int i = 0; i < bagRs.Length; i++) Show(bagRs[i], bagColor, bagKs[i] * 1.1f * bagLit, bagLit);
         }
         foreach (var o in list)
         {
             if (!o.tr.gameObject.activeSelf) continue;
-            o.lit = Mathf.MoveTowards(o.lit, o.holder >= 0 || o.given ? 1f : Lit(o.tr.position), 3f * dt);
+            o.lit = Mathf.MoveTowards(o.lit, leaving ? 0f : o.holder >= 0 || o.given ? 1f : Lit(o.tr.position), leaving ? 0.35f * dt : 3f * dt);   // every orange fades with him
             Show(o.r, orange, orangeEmission * o.lit, o.lit);
         }
     }

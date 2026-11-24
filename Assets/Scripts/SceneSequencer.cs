@@ -26,10 +26,10 @@ public class SceneSequencer : MonoBehaviour
         new Step { name = "Tutorial: phrases to your heart", autoAdvance = 75f },          // 25 + 25 + 25
         new Step { name = "1 Darkness: chained", autoAdvance = 34f },                      // author 2026-10-27: first flash at 10 s, scene 2 at 35 s (34 + the 1 s fade); the Event List said 25 + 45
         new Step { name = "2 Darkness: the three events", autoAdvance = 100f, breakWindow = true },   // 25 + 25 + 50 (author 2026-11-09: the old man and the can sooner; was 45 + 40 + 50 = 135)
-        new Step { name = "3 Street: darkness lifts", autoAdvance = 110f, breakWindow = true },       // 50 + 60
+        new Step { name = "3 Street: darkness lifts", autoAdvance = 75f, breakWindow = true },       // author 2026-11-23: 75 s (was 110)
         new Step { name = "4 Cards", autoAdvance = 80f },                                  // 25 + 40 + 15
         new Step { name = "5 Darkness: no chains", autoAdvance = 90f },                    // author 2026-11-20: scene 2 timings, a little faster (old man 0, can 20 s, woman and dog 40 s; was 15 + 50 + 40 + 55 = 160)
-        new Step { name = "6 Street again", autoAdvance = 115f },                          // 45 + 70
+        new Step { name = "6 Street again", autoAdvance = 75f },                           // author 2026-11-23: 75 s (was 115)
         new Step { name = "End", autoAdvance = 15f },
         new Step { name = "Credits", autoAdvance = 45f },
     };
@@ -136,8 +136,19 @@ public class SceneSequencer : MonoBehaviour
     {
         if (busy || Index < 0) return;
         var s = steps[Index];
-        if (s.autoAdvance > 0f && Index + 1 < steps.Length && (timer += Time.deltaTime) >= s.autoAdvance) Next();   // the last step (Credits) stays
+        if (s.autoAdvance > 0f && Index + 1 < steps.Length && (timer += Time.deltaTime) >= s.autoAdvance) Advance();   // the last step (Credits) stays
     }
+
+    // what follows a step that has run its time (author 2026-11-23): chains broken in scene 2 = the other beats of scene 2 have now had their time, so the cards come next
+    // (not the street); and after those cards the "no chains" pass (scene 5) is skipped, because the player already had their chance to act in scene 2
+    void Advance()
+    {
+        var n = steps[Index].name;
+        if (n.StartsWith("2") && ChainsBrokenByPlayer) GoToCards();
+        else if (n.StartsWith("4") && brokeInScene2 && noChainsStep + 1 < steps.Length) GoTo(noChainsStep + 1);
+        else Next();
+    }
+    bool brokeInScene2;
 
     public void Next() => GoTo(Index + 1);
     public void GoToCards() { if (Index != cardsStep) GoTo(cardsStep); }   // two scene parts may both ask (the orange given and the can binned): the second is ignored
@@ -190,7 +201,8 @@ public class SceneSequencer : MonoBehaviour
     void OnBroken()
     {
         ChainsBrokenByPlayer = true;
-        if (deferBreak) return;                      // the scene lets the player act first and calls GoToCards() when it is done
+        if (Index >= 0 && steps[Index].name.StartsWith("2")) brokeInScene2 = true;
+        if (deferBreak) return;                     // the scene lets the player act first and calls GoToCards() when it is done
         if (busy) { pending = cardsStep; return; }   // a transition is running: jump when it ends
         if (Index >= 0 && steps[Index].breakWindow) GoTo(cardsStep);
     }

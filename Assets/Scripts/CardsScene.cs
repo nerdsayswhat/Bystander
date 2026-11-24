@@ -25,28 +25,187 @@ public class CardsScene : MonoBehaviour
         new Color(0.008f, 0.17f, 0.15f), new Color(0.17f, 0.12f, 0.008f), new Color(0.17f, 0.025f, 0.1f), new Color(0.17f, 0.017f, 0.008f), new Color(0.12f, 0.12f, 0.13f)
     };
 
-    static readonly string[] Stories =
+    // Every name and every story on the cards is unique (author 2026-11-23). A story has two parts: what the person was doing, and the problem that happened to them.
+    // The eight themes below each hold 12 openers and 12 problems that fit them (8 x 12 x 12 = 1152 stories, about 940 are needed); the pairs are dealt out in one shuffled
+    // order without repeating. The problems are verb phrases with no pronoun, so they follow any opener ("was carrying ... , but tripped on the kerb and ..."). The small far cards get
+    // a short line (40 roles x 30 short problems = 1200, about 940 needed). A name is a first name only (author: no surname initial): the 940 cards with a full story all get different names (about 420 real ones, then made-up ones); the small far cards reuse real names (see BuildNames, NextName).
+    static readonly string[][] Openers =
     {
-        "was on the way to pick up her daughter from school.", "was carrying a cake for his best friend's birthday.", "had just got the news that she was going to be a grandmother.",
-        "was late for his first day at a new job.", "was walking home after a night shift at the bakery.", "was going to see the sea for the first time in ten years.",
-        "had saved all year to buy her mother a coat.", "was on the way to apologise to his brother.", "was learning to play the violin and practising on the bus.",
-        "was going to the pharmacy for his father's medicine.", "had a train to catch to her sister's wedding.", "was taking a stray kitten to the vet.",
-        "was heading to the last day of his exams.", "was walking with flowers to the grave of her husband.", "was on the way to a first date, rehearsing a joke.",
-        "had just finished chemotherapy and was walking home slowly.", "was delivering letters on his last day before retiring.", "was going to meet the son he had not seen in years.",
-        "was practising her speech for the town council.", "was carrying a guitar to the open mic night.", "was on the way to enrol at night school.",
-        "had forgotten his umbrella and was singing in the rain.", "was bringing soup to a sick neighbour.", "was on the phone telling her mother she had passed her test.",
-        "was walking the dog he had adopted that morning.", "was on the way to propose.", "was going home to cook for the first time in a month.",
-        "was racing to catch the bus with a thermos of tea.", "was taking photographs of the street for his late wife.", "was going to a funeral in her only black dress.",
-        "had just been offered the job and could not stop smiling.", "was on the way to teach her grandson to ride a bike.", "was buying bread for the whole family.",
-        "was lost and looking for the library.", "was carrying paintings to his first exhibition.", "had a letter from a friend abroad and was hurrying home to read it.",
-        "was jogging to get fit after a long illness.", "was on the way to donate blood for the first time.", "was going to visit her teacher in hospital.", "was bringing a kite to the park for his little sister."
+        new[] {   // errands and deliveries
+            "was carrying a box of books to the second-hand shop", "was bringing a casserole to a family who had just moved in", "was collecting a parcel from the post office",
+            "was picking up a wedding ring from the jeweller", "was fetching bread and milk for the whole building", "was delivering a bouquet for a stranger",
+            "was carrying a sapling to plant in the garden", "was buying saffron and lemons at the market", "was returning a borrowed coat to an old friend",
+            "was posting a letter to a prisoner", "was bringing a lunch box her son had left behind", "was taking sandwiches to the night guard" },
+        new[] {   // appointments, tests and chances
+            "was heading to a job fair with a freshly printed CV", "was taking a driving test that afternoon", "was going to hand in a thesis a day early",
+            "had been practising a speech for the town council", "was on the way to the last exam of the year", "was meeting a lawyer about a lost inheritance",
+            "was heading to the first rehearsal of the choir", "was going to sign the papers on a tiny bakery", "was on the way to a blood test, trying not to worry",
+            "was on the way to enrol at night school", "was walking to the dentist and dreading it", "was on the way to vote for the first time" },
+        new[] {   // visits and family
+            "was on the way to see his grandchildren after a long journey", "was going to meet the son he had not seen in years", "was heading to the airport to surprise her parents",
+            "was walking to the station to meet his twin brother", "was on the way to apologise to his brother", "was visiting her teacher in hospital",
+            "was on the way to see a pen friend of thirty years", "was bringing apples to the school for harvest day", "was going to see the sea for the first time in ten years",
+            "was walking a friend home after a bad day", "was on the way to tell her boss she was pregnant", "had decided today was the day to call an old friend" },
+        new[] {   // making things and learning
+            "was learning the cello and carrying it to a lesson", "was practising a magic trick for a niece", "was carrying paintings to a first exhibition",
+            "was practising a language on a lunch break", "was carrying a guitar to the open mic night", "was learning to juggle in the park",
+            "was singing quietly on the way to choir", "was taking photographs of the street for a late wife", "was heading to a pottery class, nervous and excited",
+            "was on the way to a night class in carpentry", "was taking the long way round to look at the harbour boats", "was carrying a kite to the park for his little sister" },
+        new[] {   // care and health
+            "was bringing soup to a sick neighbour", "was going to the pharmacy for his father's medicine", "was taking a stray kitten to the vet",
+            "was rushing a sick child to the clinic", "was bringing blankets to the shelter on the corner", "was on the way to donate blood for the first time",
+            "was fetching a ladder to fix a neighbour's roof", "was taking his first walk since the operation", "had just finished chemotherapy and was walking home slowly",
+            "was walking his father's old dog for the last time", "was carrying water to the old couple upstairs", "was bringing a warm meal to a friend who had lost a job" },
+        new[] {   // travelling and commuting
+            "was running to catch a ferry to see her grandmother", "was racing for the bus with a thermos of tea", "had missed the last bus and decided to walk home",
+            "was cycling to a late shift at the hospital", "was on the way to a football match with his son", "was on the way to the harbour to watch the boats",
+            "was walking to work for the first time after a year at home", "was reading a map upside down and laughing about it", "was heading to the market before dawn",
+            "was on the way to a retirement party for a colleague", "was buying a ticket to a city he had never seen", "was learning the way to a new school" },
+        new[] {   // happy moments
+            "had just quit a job and felt strangely light", "had just sold her first painting", "had just passed an exam on the third attempt",
+            "had just been offered a job and could not stop smiling", "had saved all year to buy her mother a coat", "was waiting for a call about an adoption",
+            "was telling a friend about a dream on the phone", "had just heard a song that reminded her of home", "was on the way to propose",
+            "was going home to cook for the first time in a month", "was on the phone telling her mother she had passed the test", "was on a first date, rehearsing a joke" },
+        new[] {   // an ordinary day in the neighbourhood
+            "was running errands for the whole building", "was walking off an argument with his sister", "was lost and looking for the library",
+            "was jogging to get fit after a long illness", "was meeting the neighbour who had saved her cat", "was on the way to light a candle in the old church",
+            "was on the way to the mosque to meet his father", "was going to a funeral in her only black dress", "was on the way to scatter ashes by the water",
+            "was heading to the gym for the first time in years", "was on the way to confess a small lie", "was walking to the bridge to watch the sunset" },
     };
-
-    static readonly string[] Names =
+    static readonly string[][] Problems =
+    {
+        new[] {   // errands and deliveries
+            "but tripped on the kerb and spilled everything across the road", "until a stranger snatched the bag and ran", "but forgot the address and wandered for hours",
+            "until a sudden dizzy spell forced a long rest on the pavement", "but dropped it all and could not bend down to gather it", "until a cyclist knocked into them and bruised a shoulder",
+            "but found the shop shut and cried on the doorstep", "until the handle broke and months of care ended on the ground", "but was laughed at for the clumsiness and wished to disappear",
+            "until a sharp pain in the chest made every step a struggle", "but slipped on wet leaves and sprained an ankle", "until the crowd passed by without a glance after a fall" },
+        new[] {   // appointments, tests and chances
+            "but a sudden wave of panic emptied every prepared word", "but now lacks the confidence to go through with it", "until a fall on the steps left a swollen knee and a missed appointment",
+            "but arrived to find the door shut and the chance gone", "until someone's cruel remark made every plan feel foolish", "but froze at the entrance and turned back in tears",
+            "until the shaking in both hands would not stop", "but was kept waiting for hours and lost heart", "until a dizzy spell forced a stop and the time ran out",
+            "but could not remember a single answer when it mattered", "until news of a death in the family broke the day in two", "but the fear of failing came back and refused to leave" },
+        new[] {   // visits and family
+            "but fell on the stairs and lay there waiting for help", "until a stranger's anger left every word unsaid", "but the old fear of being a burden kept the feet from moving",
+            "until a heart flutter forced a long sit on the cold ground", "but missed the train after nobody would stop to help with a fall", "until the phone fell and shattered with the only number inside",
+            "but turned back, sure that no one would want the visit", "until a dizzy turn made the street spin and the day was lost", "but was pushed aside in the crowd and hurt a wrist",
+            "until a sudden storm of tears made it impossible to go on", "but lost the gift on the way and arrived with nothing", "until the bus drove past and left a long, lonely wait" },
+        new[] {   // making things and learning
+            "but a gust ripped the work away and tore it", "until a careless crowd trampled the work underfoot", "but a taunt from a passer-by took away all courage to perform",
+            "until a trembling hand dropped the instrument and cracked it", "but stage fright returned and the hands would not play", "until a stranger sneered and the joy went out of it",
+            "but a tumble left a broken wrist and no way to play", "until the rain ruined weeks of work", "but forgot everything at the door and walked away ashamed",
+            "until someone mocked the effort and the practice stopped for good", "but the camera was knocked away and the pictures were lost", "until a sudden panic made them drop it all and run" },
+        new[] {   // care and health
+            "but collapsed on the pavement and no one stopped", "until a bad fall left them unable to rise for an hour", "but dropped everything and could not bend to pick it up",
+            "until a stranger's shout set the hands shaking and the work was lost", "but was turned away at the door, too late to help", "until a sharp cramp locked the leg and ended the trip",
+            "but a sudden faint put them on the ground, alone", "until the medicine fell and smashed, and the pharmacy had closed", "but a dog's bark set off a panic and a bad fall",
+            "until pain from an old injury returned and stopped every step", "but strength gave out halfway and the way home seemed endless", "until the care was refused and the effort felt wasted" },
+        new[] {   // travelling and commuting
+            "but slipped on the steps and missed the connection", "until a bike clipped them and left a bruised hip", "but was robbed of the wallet and the ticket together",
+            "until a panic in the crowd left them lost and frightened", "but a twisted ankle ended the journey on a cold bench", "until a wrong turn led somewhere unsafe and unwelcoming",
+            "but was ignored by everyone while asking for directions", "until the phone died and no one could be reached", "but fell hard at the platform's edge and could not stand",
+            "until a stranger's temper turned the whole trip sour", "but the long walk home finished a worn-out knee for good", "until a sudden storm soaked everything and shook the nerve" },
+        new[] {   // happy moments
+            "but the joy turned to dread when the phone went silent", "until a cruel message wiped out the whole feeling", "but the good news was lost in a fall that no one stopped for",
+            "until a stranger's cutting words made it all feel undeserved", "but then lost the nerve and the chance slipped by", "until a dizzy spell left them sitting on the ground, shaking",
+            "but a sudden bout of grief swallowed every other feeling", "until the call that never came took the happiness away", "but then fell, and the laughter around them turned to shame",
+            "until a theft took the gift, the money and the mood", "but found no one to tell, and the news felt empty", "until a sharp fear of being alone arrived and stayed" },
+        new[] {   // an ordinary day in the neighbourhood
+            "but a push in the crowd knocked them down and no one paused", "until a shouted insult made them shrink and turn back", "but the old illness returned and cut the walk short",
+            "until the fear of being watched made every step heavy", "but a stumble in front of strangers brought laughter and shame", "until a fall left a gash that bled onto the pavement",
+            "but found the gate locked and sat there, defeated", "until panic took hold and breathing would not slow", "but was shoved aside by a hurrying crowd and cried",
+            "until a stranger's cold stare undid the little courage left", "but a cramp in the chest forced a long rest on the kerb", "until the heat made everything swim and the legs gave out" },
+    };
+    static readonly string[] Roles =
+    {
+        "a baker", "a nurse", "a student", "a bus driver", "a gardener", "a teacher", "a cook", "a cleaner", "a painter", "a courier", "a barber", "a tailor", "a waiter", "a mechanic",
+        "a pianist", "a poet", "a dancer", "a welder", "a judge", "a nanny", "a florist", "a pilot", "a sailor", "a clerk", "a lawyer", "an actor", "a farmer", "a librarian", "a butcher",
+        "a potter", "a plumber", "a carpenter", "a dentist", "a porter", "a runner", "a fisher", "a priest", "a chef", "a miner", "a guard"
+    };
+    static readonly string[] ShortProblems =
+    {
+        ", hurt in a fall", ", lost a job today", ", robbed on the way", ", shaken by a stranger", ", sick and alone", ", ignored when falling", ", missed a last chance",
+        ", lost all confidence", ", mocked in public", ", frozen by panic", ", too tired to go on", ", hit by a cyclist", ", a day ruined by cruelty", ", dropped everything",
+        ", cried on a bench", ", lost and frightened", ", turned away at the door", ", afraid to try again", ", bruised and alone", ", broke a wrist", ", fainted in the street",
+        ", lost the way home", ", shaking with fear", ", unseen when in need", ", fell and lay there", ", sneered at", ", nothing left to give", ", heartbroken", ", too ashamed to speak"
+    };
+    static readonly string[] FirstNames =
     {
         "Maria", "Tom", "Aisha", "Ben", "Chen", "Elena", "Omar", "Priya", "Jack", "Lucia", "Yusuf", "Hannah", "Diego", "Mei", "Samuel", "Nora", "Ravi", "Ingrid", "Kofi", "Sofia",
-        "Leo", "Fatima", "Pedro", "Anna", "Hiro", "Zara", "Marcus", "Ines", "Andre", "Leila"
+        "Leo", "Fatima", "Pedro", "Anna", "Hiro", "Zara", "Marcus", "Ines", "Andre", "Leila", "Amara", "Bruno", "Camila", "Dmitri", "Esther", "Felix", "Grace", "Hassan", "Irene", "Jamal",
+        "Katya", "Liam", "Mina", "Nikolai", "Olga", "Paolo", "Quentin", "Rosa", "Sami", "Tara", "Umar", "Vera", "Wei", "Ximena", "Yara", "Zoltan", "Abel", "Bianca", "Carlos", "Dalia",
+        "Emre", "Freya", "Gabriel", "Hana", "Isaac", "Jelena", "Karim", "Lena", "Mateo", "Naomi", "Oscar", "Paloma", "Rafael", "Salma", "Theo", "Uma", "Viktor", "Wanda", "Xavier", "Yasmin",
+        "Zainab", "Aaron", "Bella", "Cyrus", "Dara", "Eli", "Farah", "Gustavo", "Helena", "Idris", "Joana", "Kenji", "Lola", "Malik", "Nadia", "Otto", "Petra", "Rashid", "Selma", "Tariq",
+        "Ulla", "Valeria", "Waleed", "Yuki", "Zeynep", "Arjun", "Beatriz", "Cora", "Dev", "Elif", "Fabian", "Gita", "Hugo", "Ivana", "Jonas", "Kira", "Luca", "Mara", "Niels", "Odette",
+        "Pablo", "Reza", "Sunita", "Tomas", "Ursula", "Vikram", "Wen", "Yolanda", "Zack", "Alma"
     };
+    // more real first names (the list above plus this one, de-duplicated in BuildNames); the rest of the 3,000 or so names a full pile needs are made up from syllables, so
+    // the cards nearest the player, which are dealt first, carry real names and every name in the whole pile is still different
+    static readonly string[] MoreNames =
+    {
+        "Adam", "Adriana", "Agnes", "Ahmed", "Aiden", "Akira", "Alba", "Alberto", "Alec", "Alex", "Alexei", "Alice", "Alicia", "Alina", "Alva", "Amelia", "Amir", "Ana", "Anastasia", "Anders",
+        "Andrea", "Angel", "Angela", "Anil", "Anita", "Anton", "Antonia", "Archie", "Ariana", "Arthur", "Asha", "Astrid", "Ayesha", "Beata", "Benedict", "Bernard", "Bertha", "Bilal", "Blanca",
+        "Boris", "Brenda", "Bridget", "Caleb", "Callum", "Camille", "Carla", "Carmen", "Cassandra", "Cecilia", "Cedric", "Celia", "Chiara", "Chloe", "Christian", "Clara", "Claude", "Clement",
+        "Colin", "Connor", "Cristina", "Daniel", "Daria", "David", "Deborah", "Denis", "Derek", "Devi", "Dina", "Dominic", "Dora", "Dorothy", "Edgar", "Edith", "Edward", "Eleni", "Eliza",
+        "Ella", "Elsa", "Emil", "Emma", "Enzo", "Erik", "Erin", "Ernesto", "Eva", "Evelyn", "Ezra", "Fabio", "Faisal", "Fiona", "Florence", "Francesca", "Frank", "Frida", "Gareth", "Gemma",
+        "George", "Gerda", "Gianni", "Gloria", "Gordon", "Greta", "Gwen", "Hamid", "Harold", "Harper", "Hazel", "Heidi", "Henry", "Hilda", "Hope", "Ian", "Ida", "Iliana", "Imani", "Ingo",
+        "Isabel", "Isla", "Ivan", "Ivy", "Jacob", "Jade", "Jana", "Jasmine", "Javier", "Jean", "Jenny", "Jerome", "Jessica", "Joel", "Johan", "Jorge", "Josef", "Josephine", "Juan", "Judith",
+        "Julian", "Juno", "Justin", "Karen", "Karl", "Katarina", "Kate", "Keiko", "Kemal", "Kevin", "Khalid", "Klara", "Konrad", "Kwame", "Lars", "Laura", "Layla", "Leah", "Leonard", "Leona",
+        "Lily", "Linda", "Lionel", "Lisa", "Liv", "Lorenzo", "Louis", "Lucas", "Lucy", "Ludmila", "Luis", "Lukas", "Lydia", "Mabel", "Maggie", "Magnus", "Mahmoud", "Maja", "Manuel", "Marco",
+        "Margaret", "Margot", "Marie", "Mario", "Marta", "Martin", "Mary", "Matilda", "Maurice", "Max", "Maya", "Megan", "Melina", "Mercy", "Michael", "Miguel", "Mila", "Miles", "Miriam",
+        "Mohammed", "Monica", "Murat", "Nadir", "Nancy", "Natalia", "Nathan", "Neil", "Nell", "Nicolas", "Nina", "Noah", "Noel", "Nuria", "Olivia", "Omari", "Orla", "Oswald", "Owen", "Pam",
+        "Patrick", "Paula", "Pearl", "Penelope", "Peter", "Philip", "Pia", "Piotr", "Polly", "Rachel", "Ramon", "Raul", "Rebecca", "Regina", "Remy", "Renata", "Rhea", "Richard", "Rita",
+        "Robert", "Roberto", "Rodrigo", "Roman", "Rory", "Ruben", "Ruth", "Sabine", "Sade", "Sally", "Sara", "Saul", "Sebastian", "Serena", "Sergio", "Seth", "Shira", "Sigrid", "Silvia",
+        "Simon", "Sonia", "Stella", "Susan", "Svetlana", "Tamar", "Tania", "Teresa", "Thomas", "Tilda", "Timothy", "Tobias", "Tristan", "Ulrich", "Valentina", "Vanessa", "Vincent", "Violet",
+        "Vlad", "Walter", "Willem", "William", "Yael", "Yasir", "Yvonne", "Zachary", "Zahra", "Zelda", "Zoe", "Zuri"
+    };
+    static readonly string[] Onsets = { "b", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "z", "br", "dr", "kr", "tr", "ch", "sh", "th", "gr", "pl", "sv", "kl" };
+    static readonly string[] Vowels = { "a", "e", "i", "o", "u", "a", "e", "o", "ia", "ei" };
+    static readonly string[] Ends = { "a", "an", "o", "el", "is", "ar", "en", "ia", "ya", "ik", "im", "on", "us", "e", "i", "in", "as", "ora", "ina", "ek", "av", "ir", "ana", "ko", "ul", "ev", "ay" };
+    static readonly string[] Blocked = { "tit", "ass", "fuk", "sex", "nig", "cum", "dik", "fag", "poo", "shit", "kkk", "nazi", "hell", "dam", "gay" };
+    static System.Collections.Generic.List<string> names; static int realCount; const int UniqueNames = 940;   // 400 near + 220 + 320 far cards read as full stories: all different
+    static void BuildNames()
+    {
+        var seen = new System.Collections.Generic.HashSet<string> { "Stephen", "Julia" };       // their cards are the two real ones
+        var real = new System.Collections.Generic.List<string>();
+        foreach (var n in FirstNames) if (seen.Add(n)) real.Add(n);
+        foreach (var n in MoreNames) if (seen.Add(n)) real.Add(n);
+        var rr = new System.Random(13);
+        for (int i = real.Count - 1; i > 0; i--) { int j = rr.Next(i + 1); var t = real[i]; real[i] = real[j]; real[j] = t; }
+        names = real; realCount = real.Count;
+        var g = new System.Random(5);
+        while (names.Count < UniqueNames)                                                           // the cards with a full story (the 400 near ones and the first two far bands) each get their own name
+        {
+            string s = Onsets[g.Next(Onsets.Length)] + Vowels[g.Next(Vowels.Length)] + (g.Next(2) == 0 ? Onsets[g.Next(Onsets.Length)] + Vowels[g.Next(Vowels.Length)] : "") + Ends[g.Next(Ends.Length)];
+            if (s.Length < 4 || s.Length > 9) continue;
+            bool bad = false; foreach (var b in Blocked) if (s.Contains(b)) { bad = true; break; }
+            s = char.ToUpper(s[0]) + s.Substring(1);
+            if (!bad && seen.Add(s)) names.Add(s);
+        }
+    }
+    static System.Collections.Generic.List<int> longOrder, shortOrder; static int longI, shortI, nameI;
+    static void ResetStories()
+    {
+        longI = shortI = nameI = 0;
+        int per = Openers[0].Length * Problems[0].Length, total = Openers.Length * per;               // pair k: theme k / per, opener (k % per) / problems, problem (k % per) % problems
+        longOrder = Shuffled(total, 11); shortOrder = Shuffled(Roles.Length * ShortProblems.Length, 12);
+        if (names == null) BuildNames();
+    }
+    static System.Collections.Generic.List<int> Shuffled(int n, int seed)
+    {
+        var l = new System.Collections.Generic.List<int>(n); for (int i = 0; i < n; i++) l.Add(i);
+        var r = new System.Random(seed);
+        for (int i = n - 1; i > 0; i--) { int j = r.Next(i + 1); int tmp = l[i]; l[i] = l[j]; l[j] = tmp; }
+        return l;
+    }
+    static string NextLong()
+    {
+        int k = longOrder[longI++ % longOrder.Count], per = Openers[0].Length * Problems[0].Length, th = k / per, r = k % per, np = Problems[th].Length;
+        return Openers[th][r / np] + ", " + Problems[th][r % np] + ".";
+    }
+    static string NextShort() { int k = shortOrder[shortI++ % shortOrder.Count]; return Roles[k / ShortProblems.Length] + ShortProblems[k % ShortProblems.Length]; }
+    // first names only. The first 940 (every card with a full story) are all different: the real names first, then made-up ones if the real ones run out. The small far cards
+    // (short line or name only, too small to read) reuse real names, so the card count is unchanged.
+    static string NextName() { int i = nameI++; return i < UniqueNames ? names[i] : names[(i * 7919) % realCount]; }
 
     struct Band { public float r0, r1, dim; public int count, people, chars; public bool glass; }
     static readonly Band[] Far =                                                          // the cards beyond the readable ones: distance, brightness, count, particles per person, glass
@@ -152,12 +311,12 @@ public class CardsScene : MonoBehaviour
         {
             if (!warned) { warned = true; Debug.LogWarning("CardsScene: the portrait clips are not assigned (use Bystander > Create Scene 2); the cards show without figures"); }
         }
-        t = 0f; endlessLit = chainsLit = 0f;
+        t = 0f; endlessLit = chainsLit = 0f; ResetStories();
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
         float cy = head.position.y - 0.12f;                                              // the card's centre, a little below the eyes
-        stephen = MakeCard("Stephen", "<b>STEPHEN</b>\nwas on his way to the hospital to visit his wife, who loves oranges.", Quaternion.identity, cy, idleMan, man);
-        julia = MakeCard("Julia", "<b>JULIA</b>\nwas on her way to give a job interview at her dream company.", Quaternion.Euler(0f, juliaTurn, 0f), cy, idleMan, woman);   // every character plays Stephen's idle
+        stephen = MakeCard("Stephen", "<b>STEPHEN</b>\nwas getting oranges for his wife, who loves them, until he lost his balance because of his age.", Quaternion.identity, cy, idleMan, man, false);
+        julia = MakeCard("Julia", "<b>JULIA</b>\nwas on her way to a job interview at her dream company, but now lacks the confidence to go.", Quaternion.Euler(0f, juliaTurn, 0f), cy, idleMan, woman, true);   // every character plays Stephen's idle
         BuildEndless(cy);
         if (seq.ShowChainsLine) BuildChainsLine();
         phase = Phase.Shown;
@@ -165,7 +324,7 @@ public class CardsScene : MonoBehaviour
     }
 
     // a line-art card with a particle portrait (waist up) above its text; hidden until Pop
-    Card MakeCard(string name, string story, Quaternion turn, float cy, AnimationClip clip, Color color)
+    Card MakeCard(string name, string story, Quaternion turn, float cy, AnimationClip clip, Color color, bool female)
     {
         var c = new Card { clip = clip, color = color };
         c.pos = origin + turn * fwd * cardDist; c.pos.y = cy;
@@ -189,7 +348,7 @@ public class CardsScene : MonoBehaviour
         var tx = new GameObject("Text", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
         tx.transform.SetParent(go.transform, false);
         var r = (RectTransform)tx.transform; r.sizeDelta = new Vector2(440f, 190f); r.anchoredPosition = new Vector2(0f, -283f);
-        tx.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); tx.fontSize = 32; tx.alignment = TextAnchor.MiddleCenter; tx.supportRichText = true;
+        tx.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); tx.fontSize = story.Length > 90 ? 27 : 32; tx.alignment = TextAnchor.MiddleCenter; tx.supportRichText = true;
         tx.horizontalOverflow = HorizontalWrapMode.Wrap; tx.verticalOverflow = VerticalWrapMode.Overflow; tx.raycastTarget = false;
         tx.text = story; tx.color = Color.white;
         c.waistY = cy - 0.12f;                                                           // the figure is cut here, just above the text
@@ -198,6 +357,7 @@ public class CardsScene : MonoBehaviour
             var prefab = Resources.Load<GameObject>("Prefab/ParticleFigure");
             var fg = Instantiate(prefab); fg.name = "Portrait " + name;
             var f = fg.GetComponent<ParticleFigure>();
+            BodyLibrary.Apply(f, female);                                                   // the same real body surfaces as the old man and the lady (if baked); the sizes below are set after it, so they stay as before
             f.clip = clip; f.loop = true; f.color = color; f.particleCount = 1600; f.sizeMin = 0.004f; f.sizeMax = 0.011f; f.particleSize = 0.006f;
             f.position = new Vector3(c.pos.x, 0f, c.pos.z) + c.face * 0.04f;               // a little in front of the card
             f.groundY = c.waistY - 0.6f;                                                    // refined once the hips are known (Pop)
@@ -407,7 +567,7 @@ public class CardsScene : MonoBehaviour
             var col = Palette[rnd.Next(Palette.Length)];
             for (int j = 0; j < 16; j++) { float a2 = (float)(rnd.NextDouble() * Mathf.PI * 2), rr = 0.06f * size * Mathf.Sqrt((float)rnd.NextDouble()); wv.pp.Add(p + right * Mathf.Cos(a2) * rr + up * (0.2f * size + Mathf.Sin(a2) * rr) + nrm * 0.004f); wv.pc.Add(col); }
             for (int j = 0; j < 56; j++) { float a2 = (float)(rnd.NextDouble() * Mathf.PI * 2), rr = Mathf.Sqrt((float)rnd.NextDouble()); wv.pp.Add(p + right * Mathf.Cos(a2) * rr * 0.19f * size + up * (Mathf.Sin(a2) * rr * 0.15f * size) + nrm * 0.004f); wv.pc.Add(col); }
-            MakeStoryText(wv, p, nrm, up, size, Names[rnd.Next(Names.Length)], Stories[rnd.Next(Stories.Length)]);
+            MakeStoryText(wv, p, nrm, up, size, NextName(), NextLong());
         }
         for (int w = 0; w < waves; w++) Finish(wave[w], rnd);
         // beyond the cards that can be read: bands of cards receding into the dark, each dimmer and farther than the last (see Far); each band is built a moment
@@ -449,7 +609,7 @@ public class CardsScene : MonoBehaviour
                                    : p + right * Mathf.Cos(a2) * rr * 0.16f * size + up * (Mathf.Sin(a2) * rr * 0.10f * size) + nrm * 0.004f * size);
                 wv.pc.Add(col); wv.psz.Add((headPart ? 0.020f : 0.026f) * size * (0.8f + 0.4f * (float)rnd.NextDouble()));
             }
-            MakeStoryText(wv, p, nrm, up, size, Names[rnd.Next(Names.Length)], Short(Stories[rnd.Next(Stories.Length)], fb.chars));
+            MakeStoryText(wv, p, nrm, up, size, NextName(), fb.chars <= 0 ? "" : fb.r0 < 20f ? NextLong() : NextShort());   // the two nearest far bands read as full stories, the next two as a short line; the farthest two show only a name
         }
         Finish(wv, rnd);
         wv.built = true;
@@ -500,7 +660,7 @@ public class CardsScene : MonoBehaviour
         tx.transform.SetParent(wv.canvas, false);
         var r = (RectTransform)tx.transform; r.sizeDelta = new Vector2(440f, 190f);
         r.localPosition = (p - up * (0.283f * size) + nrm * 0.004f) * 1000f; r.localRotation = Quaternion.LookRotation(-nrm, up); r.localScale = Vector3.one * size;
-        tx.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); tx.fontSize = 32; tx.alignment = TextAnchor.MiddleCenter; tx.supportRichText = true;
+        tx.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); tx.fontSize = story.Length > 120 ? 24 : story.Length > 90 ? 28 : 32; tx.alignment = TextAnchor.MiddleCenter; tx.supportRichText = true;   // the stories now have two parts: a long one gets a smaller size so it stays on the card
         tx.horizontalOverflow = HorizontalWrapMode.Wrap; tx.verticalOverflow = VerticalWrapMode.Overflow; tx.raycastTarget = false;
         tx.text = "<b>" + name.ToUpper() + "</b>\n" + story; tx.color = Color.white;
     }
