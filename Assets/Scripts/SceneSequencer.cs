@@ -38,7 +38,7 @@ public class SceneSequencer : MonoBehaviour
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
-    public static readonly string TestStartsAt = "2";   // test start: a build begins at the first step whose name starts with this ("3" the street, "6" the street again, "4" the cards...); "" = the whole film from the warning
+    public static readonly string TestStartsAt = "3";   // test start: a build begins at the first step whose name starts with this ("3" the street, "6" the street again, "4" the cards...); "" = the whole film from the warning
     public static readonly bool TestScene5Only = false;   // build for testing scene 5 only: starts at the "5 ..." step (no chains), editor or build. Set false for the real film.
     public static readonly bool TestCardsOnly = false;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
     public bool showLabel = true;                // placeholder labels on or off

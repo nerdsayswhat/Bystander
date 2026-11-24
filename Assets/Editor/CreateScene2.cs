@@ -21,7 +21,7 @@ public static class CreateScene2
         else if (File.Exists(Dst))
         {
             var text = File.ReadAllText(Dst);                                                       // an older Scene 2.unity is brought up to date by itself: a part or a street clip list is missing
-            if (!text.Contains("cower:") || !text.Contains("idleMan:") || !text.Contains("scaredWalk:") || !text.Contains("walkMix:") || !text.Contains("talkClips:") || !text.Contains("cowerClip:")) EditorApplication.delayCall += Create;
+            if (!text.Contains("cower:") || !text.Contains("idleMan:") || !text.Contains("scaredWalk:") || !text.Contains("walkMix:") || !text.Contains("talkClips:") || !text.Contains("cowerClip:") || !text.Contains("punchClips:")) EditorApplication.delayCall += Create;
         }
     }
 
@@ -73,7 +73,7 @@ public static class CreateScene2
         street.pickUp = ClipAt("Assets/Animations/Mixamo/pick_up.fbx"); street.walk = ClipAt("Assets/Animations/Mixamo/walking_medium_pace.fbx"); street.walkOld = ClipAt("Assets/Animations/Mixamo/old_man_walk.fbx"); street.gather = Clip("oldman_gather_loop");
         const string M = "Assets/Animations/Mixamo/";
         street.talkClips = new[] { ClipAt(M + "Talking.fbx"), ClipAt(M + "Talking (1).fbx"), ClipAt(M + "Talking (2).fbx"), ClipAt(M + "Talking (3).fbx") }; street.textClips = new[] { ClipAt(M + "Texting While Standing.fbx") };
-        street.runClips = new[] { ClipAt(M + "Running.fbx"), ClipAt(M + "Running (1).fbx") }; street.sitClips = new[] { ClipAt(M + "Sitting Talking Looking left.fbx"), ClipAt(M + "Sitting Talking looking right.fbx") };
+        street.runClips = new[] { ClipAt(M + "Running.fbx"), ClipAt(M + "Running (1).fbx"), ClipAt(M + "Look Behind Run.fbx") }; street.punchClips = new[] { ClipAt(M + "Punching.fbx"), ClipAt(M + "Punching (1).fbx"), ClipAt(M + "Punching (2).fbx"), ClipAt(M + "Punching (3).fbx") }; street.hitClips = new[] { ClipAt(M + "Taking Punch.fbx"), ClipAt(M + "Receiving An Uppercut.fbx") }; street.reactClips = new[] { ClipAt(M + "Reacting.fbx"), ClipAt(M + "Surprised.fbx") }; street.sitClips = new[] { ClipAt(M + "Sitting Talking Looking left.fbx"), ClipAt(M + "Sitting Talking looking right.fbx") };
         street.walkMix = new[] { street.walk, ClipAt(M + "Walking While Texting.fbx"), ClipAt(M + "Walking With Shopping Bag.fbx") }; street.arguing = ClipAt(M + "Standing Arguing.fbx");
         street.kneel = ClipAt("Assets/Animations/Mixamo/kneeling.fbx"); street.stabbed = Clip("stabbed_ground_loop"); street.scaredWalk = Clip("Woman_scared_walk_loop");
         EditorUtility.SetDirty(street);

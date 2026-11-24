@@ -14,13 +14,14 @@ using UnityEngine;
 // Follows SceneSequencer by step name ("3 ..." and "6 ..."). Created in Scene 2.unity by Bystander > Create Scene 2 (which assigns the five clips).
 public partial class StreetScene : MonoBehaviour
 {
+    public AnimationClip[] punchClips, hitClips, reactClips;   // fights: punching (4), being hit (taking a punch, an uppercut), onlookers reacting (reacting, surprised)
     public AnimationClip[] talkClips, textClips, runClips, sitClips, walkMix; public AnimationClip arguing;   // talking (4), texting, running (2), sitting talking (left, right), walking (plain, texting, shopping bag)
     public AnimationClip cowerClip;   // the lady cowering (scene 2's woman_cower_loop)
     ParticleDog dog; Renderer ballR2;
     public AnimationClip idle, idle2, idle3, lookUp, pickUp, walk, walkOld, gather, fallen, stabbed, kneel, scaredWalk;     // standing idle, lying in pain, stabbed on the ground, kneeling, the woman's scared walk
     public float viewHeight = 10f;                          // m: the street lies this far below the player's floor
     public float riseTime = 6f;                             // seconds the street takes to light up ("darkness starts lifting")
-    public int columns = 90; public int walkerCount = 130, standerCount = 60;                            // still columns (36 particles each)
+    public int columns = 90; public int strollerCount = 25, standerCount = 60;   // strollerCount: ordinary walkers, was walkerCount 130 (author 2026-11-24: the street did not feel menacing; renamed because Scene 2.unity holds the old value)                            // still columns (36 particles each)
     public float lineBright = 0.9f;
     public float fadeIn = 2.5f, liftDelay = 3f, riseSeconds = 16f;   // s: the lines fade in; the rise above the street starts after liftDelay and lasts riseSeconds
     public Color people = new Color(0.004f, 0.05f, 0.16f);  // x emission 10: the same azure as the particle figures
@@ -87,6 +88,7 @@ public partial class StreetScene : MonoBehaviour
         mpb.SetColor(BaseColor, Color.white * lineBright * k); lines.SetPropertyBlock(mpb);
         if (ring != null) { mpb.SetColor(BaseColor, Color.white * 2.5f * k); ring.SetPropertyBlock(mpb); }
         crowdMat.SetColor(BaseColor, Color.white * 10f * k); babyMat.SetColor(BaseColor, Color.white * 10f * k);
+        UpdatePolice(k);
         foreach (var f in figs) if (f != null) f.brightness = f == oldManFig && keep ? kf : f == ladyFig && keep ? kw : keptFigs.Contains(f) ? 1f : k;
         foreach (var r in fruit) { mpb.SetColor(BaseColor, new Color(0.9f * 1.6f, 0.3f * 1.6f, 0.04f * 1.6f, 1f) * kf); r.SetPropertyBlock(mpb); }
         if (womanFig != null && womanFig.Skeleton != null)                                 // the scared woman crosses the street, in place and moved along
@@ -142,7 +144,7 @@ public partial class StreetScene : MonoBehaviour
         var cam = Camera.main; if (cam != null) { prevNear = cam.nearClipPlane; cam.nearClipPlane = Mathf.Max(prevNear, 0.15f); nearChanged = true; }   // a nearer clip plane gives the depth buffer the precision to keep lines in front of their solids far away
         t = 0f; root.SetActive(true); if (ringGo != null) ringGo.SetActive(true);
         var rnd = new System.Random(22);
-        BuildCrowd(rnd);
+        BuildCrowd(rnd); BuildPolice();
         BuildFigures();
         phase = Phase.Shown;
         Log(scene6 ? "scene 6: the street again" : "scene 3: the street, darkness lifts");
@@ -540,7 +542,7 @@ public partial class StreetScene : MonoBehaviour
     {
         // problems far away: spots on the roads 28 to 105 m out, each with litter strewn round it (a person down, a stabbing or a fight is added there by BuildPeople)
         problemSpots.Clear(); var prnd = new System.Random(55);
-        for (int tries = 0; problemSpots.Count < 12 && tries < 400; tries++)
+        for (int tries = 0; problemSpots.Count < 16 && tries < 600; tries++)
         {
             int k = prnd.Next(-3, 4); bool alongX = prnd.NextDouble() < 0.5; float along = (float)(prnd.NextDouble() - 0.5) * 210f, lat = (float)(prnd.NextDouble() - 0.5) * 4f;
             var c = alongX ? P(along, 0f, 28f * k + lat) : P(28f * k + lat, 0f, along); float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; bool close = false;
@@ -614,6 +616,99 @@ public partial class StreetScene : MonoBehaviour
     }
 
     // the bystanders: still columns (a head and a body of 36 particles) in clusters on the roads, and the baby in the stroller
+    // author 2026-11-24: red and blue police lights, as if the cars were behind buildings. The cars are never drawn: only a few strobing cores (hard little lights, as if seen
+    // through gaps and over roofs) and large soft halos around them, washing the facades and the air above the roofs. Red and blue alternate, each spot at its own phase.
+    public int policeSpots = 8; public float policeFlash = 0.5f;
+    ParticleSystem policePs; ParticleSystem.Particle[] policeParts; Material policeMat; int[] policeSpot; bool[] policeBlue, policeCore; float[] policeBase; float[] policePhase; static Texture2D softTex;
+    static Texture2D Soft()
+    {
+        if (softTex != null) return softTex;
+        const int n = 64; softTex = new Texture2D(n, n, TextureFormat.RGBA32, true) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        var px = new Color32[n * n];
+        for (int y = 0; y < n; y++) for (int x = 0; x < n; x++) { float dx = (x + 0.5f) / n * 2f - 1f, dy = (y + 0.5f) / n * 2f - 1f, r = Mathf.Sqrt(dx * dx + dy * dy), a = Mathf.Exp(-5f * r * r) * Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(0.55f, 1f, r)); px[y * n + x] = new Color32(255, 255, 255, (byte)(255f * a)); }   // a Gaussian blur (the author reference: a red and a blue glow, very soft, black buildings in front), faded to nothing before the edge
+        softTex.SetPixels32(px); softTex.Apply(true); return softTex;
+    }
+    // ChainParticle (the figures' material) is OPAQUE with alpha clip: it cuts every particle texture to a hard-edged disc, so no blur is possible with it (the 2026-11-24 "too hard" feedback).
+    // The glow gets its own transparent, additive, no-depth-write material from the same URP particle shader, so the soft texture really fades to nothing.
+    static Material GlowMaterial()
+    {
+        var sh = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        if (sh == null) { Debug.LogWarning("StreetScene: URP particle shader not found for the police glow"); sh = Shader.Find("Sprites/Default"); }
+        var m = new Material(sh) { name = "PoliceGlow" };
+        m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 2f); m.SetFloat("_AlphaClip", 0f); m.SetFloat("_ZWrite", 0f);
+        m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha); m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.One);
+        m.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One); m.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+        m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT"); m.DisableKeyword("_ALPHATEST_ON"); m.DisableKeyword("_ALPHAPREMULTIPLY_ON"); m.DisableKeyword("_ALPHAMODULATE_ON");
+        m.SetOverrideTag("RenderType", "Transparent"); m.renderQueue = 3000;
+        m.SetTexture("_BaseMap", Soft());
+        return m;
+    }
+    void BuildPolice()
+    {
+        var prnd = new System.Random(303); var spots = new List<Vector3>(); var roadDirs = new List<Vector3>(); var roadPts = new List<Vector3>();
+        for (int tries = 0; spots.Count < policeSpots && tries < 800; tries++)
+        {
+            // author 2026-11-24: strictly between the buildings, never on the streets next to the player: the middle of a block (buildings all round), and not in the blocks
+            // beside the four streets that run in front of, behind, left and right of the player (those are within 28 m of their axes)
+            int bi = prnd.Next(-4, 4), bj = prnd.Next(-4, 4); var c = P(28f * bi + 14f, 0f, 28f * bj + 14f);
+            var rel = c - new Vector3(origin.x, c.y, origin.z); float lx = Mathf.Abs(Vector3.Dot(rel, right)), lz = Mathf.Abs(Vector3.Dot(rel, fwd));
+            float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 60f || d > 110f || Mathf.Min(lx, lz) < 28f) continue;
+            bool close = false; foreach (var q in spots) if ((q - c).sqrMagnitude < 1225f) close = true;
+            if (!close) { bool ax = prnd.NextDouble() < 0.5; var rdir = ax ? right : fwd; var pdir = ax ? fwd : right; spots.Add(c); roadDirs.Add(rdir); roadPts.Add(c + pdir * (prnd.NextDouble() < 0.5 ? 14f : -14f)); }   // the road that runs along one side of the block
+        }
+        var pos = new List<Vector3>(); var sz = new List<float>(); var spot = new List<int>(); var blue = new List<bool>(); var core = new List<bool>(); var bas = new List<float>(); var ph = new List<float>();
+        for (int s = 0; s < spots.Count; s++)
+        {
+            float phase = (float)prnd.NextDouble();
+            // author 2026-11-24: the light bounces off only a few buildings: the two facing each other across the road next to the hidden source (red on one, blue on the opposite one) and the building
+            // directly to the left and the right of each of them (fainter). Six soft patches on the walls, low, instead of a haze over every building.
+            var rd = roadDirs[s]; var pr = Vector3.Cross(Vector3.up, rd);
+            for (int w = 0; w < 2; w++)
+                for (int a = -1; a <= 1; a++)
+                {
+                    var wp = roadPts[s] + pr * (w == 0 ? 8f : -8f) + rd * (a * 14f) + Vector3.up * (4f + (float)prnd.NextDouble() * 2f);
+                    pos.Add(wp); sz.Add(13f); spot.Add(s); blue.Add(w == 1); core.Add(false); bas.Add(a == 0 ? 0.4f : 0.22f); ph.Add(phase);
+                }
+            for (int side = 0; side < 2; side++)                                       // side 0 red, side 1 blue: a light bar's two ends
+            {
+                var o = spots[s] + right * (side == 0 ? -7f : 7f) + Vector3.up * 9f;   // the afterglow hangs at roof height over the hidden source, so it no longer washes the street floor in front of the buildings (author 2026-11-24)
+                pos.Add(o); sz.Add(34f); spot.Add(s); blue.Add(side == 1); core.Add(false); bas.Add(0.2f); ph.Add(phase);          // a very soft haze over the block, fainter than before (less disco)
+                for (int h = 0; h < 1; h++)                                             // and one wider, fainter one above the roofs
+                {
+                    var hp = spots[s] + (right * ((float)prnd.NextDouble() - 0.5f) + fwd * ((float)prnd.NextDouble() - 0.5f)) * 14f + Vector3.up * (14f + (float)prnd.NextDouble() * 8f);
+                    pos.Add(hp); sz.Add(42f + (float)prnd.NextDouble() * 16f); spot.Add(s); blue.Add(side == 1); core.Add(false); bas.Add(0.07f); ph.Add(phase);
+                }
+            }
+        }
+        if (pos.Count == 0) return;
+        var go = new GameObject("PoliceGlow"); go.transform.SetParent(root.transform, false);
+        policePs = go.AddComponent<ParticleSystem>();
+        var main = policePs.main; main.simulationSpace = ParticleSystemSimulationSpace.Local; main.playOnAwake = false; main.maxParticles = pos.Count;
+        var em = policePs.emission; em.enabled = false; var sh = policePs.shape; sh.enabled = false;
+        var r = go.GetComponent<ParticleSystemRenderer>(); r.sharedMaterial = Resources.Load<Material>("ChainParticle");
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; r.receiveShadows = false; r.maxParticleSize = 5f;
+        policeMat = GlowMaterial(); r.sharedMaterial = policeMat;
+        policeParts = new ParticleSystem.Particle[pos.Count];
+        for (int i = 0; i < pos.Count; i++) { policeParts[i].position = pos[i]; policeParts[i].startSize = sz[i]; policeParts[i].startLifetime = 1000f; policeParts[i].remainingLifetime = 1000f; policeParts[i].startColor = Color.clear; }
+        policePs.SetParticles(policeParts, policeParts.Length); policePs.Play();
+        policeSpot = spot.ToArray(); policeBlue = blue.ToArray(); policeCore = core.ToArray(); policeBase = bas.ToArray(); policePhase = ph.ToArray();
+    }
+    void UpdatePolice(float k)
+    {
+        if (policePs == null) return;
+        policeMat.SetColor(BaseColor, new Color(k, k, k, 1f));
+        float tm = Time.time * policeFlash;
+        for (int i = 0; i < policeParts.Length; i++)
+        {
+            float x = (tm + policePhase[i]) % 1f, xc = (x + (policeBlue[i] ? 0.5f : 0f)) % 1f;
+            float on = xc < 0.5f ? 1f : 0f;   // a true strobe: red is on for half the cycle and blue the other half, switching instantly with no fade (author 2026-11-24)
+            on = 0.06f + 0.94f * on;
+            float v = on * policeBase[i];
+            policeParts[i].startColor = policeBlue[i] ? new Color(0.12f, 0.3f, 1f, v) : new Color(1f, 0.05f, 0.04f, v);   // additive: rgb x alpha x the soft texture
+        }
+        policePs.SetParticles(policeParts, policeParts.Length);
+    }
+
     void BuildCrowd(System.Random rnd)
     {
         var pp = new List<Vector3>(); var pc = new List<Color>(); var ps = new List<float>();
@@ -746,7 +841,7 @@ public partial class StreetScene : MonoBehaviour
         queue.Clear(); peds.Clear(); var rnd = new System.Random(77);
         if (walk == null) return;
         var standL = new List<AnimationClip> { idle, idle2, idle3, lookUp }; if (talkClips != null) standL.AddRange(talkClips); if (textClips != null) standL.AddRange(textClips); standL.RemoveAll(c => c == null); var stand = standL.ToArray(); int placed = 0;
-        for (int tries = 0; placed < walkerCount && tries < 400; tries++)
+        for (int tries = 0; placed < strollerCount && tries < 400; tries++)
         {
             int k = rnd.Next(1, 4) * (rnd.NextDouble() < 0.5 ? -1 : 1); bool alongX = rnd.NextDouble() < 0.5; float along = (float)(rnd.NextDouble() - 0.5) * 120f, lat = (float)(rnd.NextDouble() - 0.5) * 6.4f;
             var pos = alongX ? P(along, 0f, 28f * k + lat) : P(28f * k + lat, 0f, along); float d = new Vector2(pos.x - origin.x, pos.z - origin.z).magnitude;
@@ -773,29 +868,67 @@ public partial class StreetScene : MonoBehaviour
         // problems far away: someone down with helpers kneeling, a stabbing with a helper, someone alone on the ground with people looking
         for (int i = 0; i < problemSpots.Count; i++)
         {
-            var c = problemSpots[i]; float yw = (float)rnd.NextDouble() * Mathf.PI * 2f; var ax = right * Mathf.Cos(yw) + fwd * Mathf.Sin(yw); var ay = Vector3.Cross(Vector3.up, ax); int type = i % 4;
-            if (fallen != null && type != 1) queue.Add(new Spec { clip = fallen, pos = c, yaw = yw * Mathf.Rad2Deg, count = 260 });
+            var c = problemSpots[i]; float yw = (float)rnd.NextDouble() * Mathf.PI * 2f; var ax = right * Mathf.Cos(yw) + fwd * Mathf.Sin(yw); var ay = Vector3.Cross(Vector3.up, ax); int type = i % 6;
+            if (fallen != null && type != 1 && type != 5) queue.Add(new Spec { clip = fallen, pos = c, yaw = yw * Mathf.Rad2Deg, count = 260 });
             if (type == 0 || type == 3) { if (kneel != null) queue.Add(new Spec { clip = kneel, pos = c + ax * 1.1f, yaw = yw * Mathf.Rad2Deg + 180f, count = 260 }); }
             if (type == 3 && kneel != null) queue.Add(new Spec { clip = kneel, pos = c - ax * 1.1f + ay * 0.4f, yaw = yw * Mathf.Rad2Deg, count = 260 });
             if (type == 1 && stabbed != null) { queue.Add(new Spec { clip = stabbed, pos = c, yaw = yw * Mathf.Rad2Deg, count = 260 }); queue.Add(new Spec { clip = idle, pos = c + ax * 1.3f, yaw = yw * Mathf.Rad2Deg + 180f, count = 260 }); }
+            if (type == 4 || type == 5)                                                              // a crowd gathering round someone down (4) or round a fight (5): a ring of people, all looking in
+            {
+                int ring = type == 4 ? 10 : 7; float rr = type == 4 ? 2.2f : 3.2f;
+                if (type == 5 && punchClips != null && punchClips.Length > 0 && hitClips != null && hitClips.Length > 0)
+                {
+                    queue.Add(new Spec { clip = punchClips[rnd.Next(punchClips.Length)], pos = c - ax * 0.55f, dir = ax, speed = 0f, count = 260 });
+                    queue.Add(new Spec { clip = hitClips[rnd.Next(hitClips.Length)], pos = c + ax * 0.55f, dir = -ax, speed = 0f, count = 260 });
+                }
+                else if (type == 5 && arguing != null)
+                {
+                    queue.Add(new Spec { clip = arguing, pos = c - ax * 0.45f, dir = ax, speed = 0f, count = 260 });
+                    queue.Add(new Spec { clip = arguing, pos = c + ax * 0.45f, dir = -ax, speed = 0f, count = 260 });
+                }
+                for (int j = 0; j < ring; j++)
+                {
+                    float a = yw + j * Mathf.PI * 2f / ring + (float)(rnd.NextDouble() - 0.5) * 0.3f, r = rr + (float)rnd.NextDouble() * 0.9f;
+                    var u = right * Mathf.Cos(a) + fwd * Mathf.Sin(a);
+                    var look = reactClips != null && reactClips.Length > 0 && rnd.NextDouble() < 0.6 ? reactClips[rnd.Next(reactClips.Length)] : stand[rnd.Next(stand.Length)];   // mostly shocked or reacting
+                    queue.Add(new Spec { clip = look, pos = c + u * r, yaw = a * Mathf.Rad2Deg + 180f, count = 220 });
+                }
+            }
             if (type == 2) { queue.Add(new Spec { clip = lookUp != null ? lookUp : idle, pos = c + ax * 2.2f + ay * 0.6f, yaw = 0f, count = 220 }); queue.Add(new Spec { clip = idle2 != null ? idle2 : idle, pos = c - ax * 2.0f - ay * 0.5f, yaw = 90f, count = 220 }); }
         }
         // pairs arguing, face to face
         if (arguing != null)
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 20; i++)
             {
                 bool alongX = rnd.NextDouble() < 0.5; int k = rnd.Next(-3, 4); float along = (float)(rnd.NextDouble() - 0.5) * 100f, lat = (float)(rnd.NextDouble() - 0.5) * 5f;
                 var c = alongX ? P(along, 0f, 28f * k + lat) : P(28f * k + lat, 0f, along); float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 12f || d > 65f || (cleanNear && d < nearClean)) continue;
                 var axis = alongX ? right : fwd;
-                queue.Add(new Spec { clip = arguing, pos = c - axis * 0.6f, dir = axis, speed = 0f, count = 300 }); queue.Add(new Spec { clip = arguing, pos = c + axis * 0.6f, dir = -axis, speed = 0f, count = 300 });
+                bool brawl = i % 3 == 0 && punchClips != null && punchClips.Length > 0 && hitClips != null && hitClips.Length > 0;   // every third pair is a fist fight
+                queue.Add(new Spec { clip = brawl ? punchClips[i % punchClips.Length] : arguing, pos = c - axis * (brawl ? 0.55f : 0.45f), dir = axis, speed = 0f, count = 300 }); queue.Add(new Spec { clip = brawl ? hitClips[i % hitClips.Length] : arguing, pos = c + axis * (brawl ? 0.55f : 0.45f), dir = -axis, speed = 0f, count = 300 });
             }
-        // people running along the roads
-        if (runClips != null && runClips.Length > 0)
-            for (int i = 0; i < 12; i++)
+        // author 2026-11-24: the runners are gone; the same 24 places are action instead, to make the street feel lawless: fist fights, a mugging (someone beaten on the ground), and a gang beating
+        // one person, with the pairs and groups spread along the roads. (Needs the punching and hit clips; with none assigned nothing is added.)
+        if (punchClips != null && punchClips.Length > 0 && hitClips != null && hitClips.Length > 0)
+            for (int i = 0; i < 24; i++)
             {
                 int k = rnd.Next(1, 4) * (rnd.NextDouble() < 0.5 ? -1 : 1); bool alongX = rnd.NextDouble() < 0.5; float along = (float)(rnd.NextDouble() - 0.5) * 100f, lat = (float)(rnd.NextDouble() - 0.5) * 5f;
-                var pos = alongX ? P(along, 0f, 28f * k + lat) : P(28f * k + lat, 0f, along); float d = new Vector2(pos.x - origin.x, pos.z - origin.z).magnitude; if (d < 14f || d > 70f) continue;
-                queue.Add(new Spec { clip = runClips[i % runClips.Length], pos = pos, dir = (alongX ? right : fwd) * (rnd.NextDouble() < 0.5 ? 1f : -1f), speed = 3f, count = d < 30f ? 450 : 300 });
+                var c = alongX ? P(along, 0f, 28f * k + lat) : P(28f * k + lat, 0f, along); float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 14f || d > 70f) continue;
+                var ax = alongX ? right : fwd; var ay = Vector3.Cross(Vector3.up, ax); int cnt = d < 30f ? 450 : 300; int type = i % 4;
+                if (type == 0 || type == 1)                                                      // a fist fight: one punching, one taking it
+                {
+                    queue.Add(new Spec { clip = punchClips[rnd.Next(punchClips.Length)], pos = c - ax * 0.55f, dir = ax, speed = 0f, count = cnt });
+                    queue.Add(new Spec { clip = hitClips[rnd.Next(hitClips.Length)], pos = c + ax * 0.55f, dir = -ax, speed = 0f, count = cnt });
+                }
+                else if (type == 2 && fallen != null)                                            // a mugging: someone on the ground, someone standing over them punching down
+                {
+                    queue.Add(new Spec { clip = fallen, pos = c, yaw = (float)rnd.NextDouble() * 360f, count = cnt });
+                    queue.Add(new Spec { clip = punchClips[rnd.Next(punchClips.Length)], pos = c + ay * 0.7f, dir = -ay, speed = 0f, count = cnt });
+                }
+                else                                                                              // a gang: three punching one, who is taking it in the middle
+                {
+                    queue.Add(new Spec { clip = hitClips[rnd.Next(hitClips.Length)], pos = c, dir = ax, speed = 0f, count = cnt });
+                    for (int g = 0; g < 3; g++) { float a = g * 2.1f + (float)rnd.NextDouble() * 0.6f; var u = right * Mathf.Cos(a) + fwd * Mathf.Sin(a); queue.Add(new Spec { clip = punchClips[rnd.Next(punchClips.Length)], pos = c + u * 0.7f, dir = -u, speed = 0f, count = cnt }); }
+                }
             }
         // people sitting on the benches, talking to each other
         if (sitClips != null && sitClips.Length > 0)
@@ -860,6 +993,7 @@ public partial class StreetScene : MonoBehaviour
         if (solidMat != null) Destroy(solidMat);
         if (crowdMat != null) Destroy(crowdMat);
         if (babyMat != null) Destroy(babyMat);
+        if (policeMat != null) Destroy(policeMat);
         root = null; lines = null; ring = null; womanFig = null; phase = Phase.Idle; t = 0f;
         Log("street ends");
     }

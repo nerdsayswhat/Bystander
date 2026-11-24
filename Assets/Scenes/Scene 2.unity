@@ -299,15 +299,15 @@ MonoBehaviour:
   orangeRadius: 0.04
   orange: {r: 1, g: 0.32, b: 0.03, a: 1}
   orangeEmission: 1.6
-  bag: {r: 0.55, g: 0.22, b: 0.04, a: 1}
+  bagColor: {r: 0.8, g: 0.56, b: 0.28, a: 1}
   litFull: 35
   litFade: 75
   dismissAfterLook: 2
   dismissLatest: 25
   oldManLeft: 65
-  oldManAt: 0.85
+  oldManDist: 1.15
   bagLeft: 50
-  bagAt: 0.7
+  bagDist: 0.95
   footLeft: 22
   footDist: 0.5
   toesLeft: 8
@@ -373,19 +373,24 @@ MonoBehaviour:
   beltAnchor: {x: 0.28, y: 0.6, z: 0.12}
   sag: 0.06
   reach: 0.35
-  stretchLook: 2
-  stretch: 0.12
+  stretchShow: 4
+  reachExtra: 0.2
   pullRange: 0.25
   tremble: 0.002
-  trembleTarget: 0.01
+  shakeAimed: 0.03
+  restDim: 0.45
   tremorStart: 0.75
   awayStart: 0.3
   awayFull: 0.45
+  torsoLen: 0.6
   bodyBack: 0.08
   follow: 2
   armed: 0
-  holdFor: 1
-  reachDist2: 0.45
+  breakHold: 1.5
+  reachDist: 0.6
+  seatedLean: 0.1
+  bendNeeded: 0.35
+  torsoFollowBend: 0.7
   reachCone: 40
   requireFist: 0
   fistDistance: 0.12
@@ -398,7 +403,7 @@ MonoBehaviour:
   emissionPull: 10
   ringPoints: 30
   renderSolid: 0
-  minPull: 0.12
+  pullNeeded: 0.2
   breakDuration: 1.2
   scatterSpeed: 3.5
   onBroken:
@@ -510,6 +515,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe6fc2df967068d4283474d7ff45412f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StreetScene
+  punchClips:
+  - {fileID: -203655887218126122, guid: 73d8ebe458c9ad34aa4c0e114ea3aa12, type: 3}
+  - {fileID: -203655887218126122, guid: 17f243625be0b95428f595ee8f2d3437, type: 3}
+  - {fileID: -203655887218126122, guid: 87a9f11448cb3df40abd1a13bcf6346a, type: 3}
+  - {fileID: -203655887218126122, guid: a2da1e0b7603b264fa3d9b5bd9a5226d, type: 3}
+  hitClips:
+  - {fileID: -203655887218126122, guid: 6f23166b0cf7564419970304cff8b23d, type: 3}
+  - {fileID: -203655887218126122, guid: a4decc65325b4014a8054d3dabfd2f3a, type: 3}
+  reactClips:
+  - {fileID: -203655887218126122, guid: d79612952f264a44980060a45ff91302, type: 3}
+  - {fileID: -203655887218126122, guid: af0191438e73ab546a34d586d69df707, type: 3}
   talkClips:
   - {fileID: -203655887218126122, guid: b006a0f0d00a6404eaa2e32c5389bc07, type: 3}
   - {fileID: -203655887218126122, guid: e620b4872e86bb3429a6602a00b1142d, type: 3}
@@ -520,6 +536,7 @@ MonoBehaviour:
   runClips:
   - {fileID: -203655887218126122, guid: 0662190613be1ed478042e85e4888a0a, type: 3}
   - {fileID: -203655887218126122, guid: fa30f607c1c9f384e8ad58b6999ab9a8, type: 3}
+  - {fileID: -203655887218126122, guid: 0c883958950dd1f46a07d5f9ffbfa8cb, type: 3}
   sitClips:
   - {fileID: -203655887218126122, guid: fa552c6d08d3c124398697a0cc05b19e, type: 3}
   - {fileID: -203655887218126122, guid: 3210658aad22ed3438a3e77427c1a379, type: 3}
@@ -544,7 +561,7 @@ MonoBehaviour:
   viewHeight: 10
   riseTime: 6
   columns: 90
-  walkerCount: 130
+  strollerCount: 25
   standerCount: 60
   lineBright: 0.9
   fadeIn: 2.5
@@ -560,6 +577,8 @@ MonoBehaviour:
   buildTime: 3
   detailTime: 1.2
   gatherTime: 2.5
+  policeSpots: 8
+  policeFlash: 3.2
 --- !u!4 &745694575
 Transform:
   m_ObjectHideFlags: 0
@@ -1586,9 +1605,14 @@ MonoBehaviour:
   scene5At: 40
   beat3At: 50
   womanAt: -25
-  womanRange: 0.8
+  womanAway: 1.1
   dogAt: -115
-  dogRange: 0.95
+  dogAway: 1.25
+  womanFar: 3.6
+  dogGap: 1.2
+  dogRun: 3.5
+  dogStop: 1
+  seatedBallScale: 0.65
   womanTweak: 0
   ballSize: 0.04
   ballRest: 0.04
