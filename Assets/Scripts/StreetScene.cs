@@ -33,6 +33,7 @@ public partial class StreetScene : MonoBehaviour
     SceneSequencer seq; Transform head; Phase phase; float t, findTimer, rise; bool warned, scene6;
     Vector3 origin, fwd, right; float baseY;
     readonly List<Vector3> lv = new List<Vector3>(); readonly List<int> li = new List<int>();
+    ParticleSystemRenderer chainedR; Material chainedMat;   // the chained people at the intersections
     GameObject root; MeshRenderer lines, ring; Material crowdMat; ParticleSystemRenderer crowdR, babyR; Material babyMat;
     MaterialPropertyBlock mpb;
     readonly List<ParticleFigure> figs = new List<ParticleFigure>(); ParticleFigure womanFig; float walkX;
@@ -88,6 +89,7 @@ public partial class StreetScene : MonoBehaviour
         mpb.SetColor(BaseColor, Color.white * lineBright * k); lines.SetPropertyBlock(mpb);
         if (ring != null) { mpb.SetColor(BaseColor, Color.white * 2.5f * k); ring.SetPropertyBlock(mpb); }
         crowdMat.SetColor(BaseColor, Color.white * 10f * k); babyMat.SetColor(BaseColor, Color.white * 10f * k);
+        if (chainedMat != null) chainedMat.SetColor(BaseColor, Color.white * 10f * k);
         UpdatePolice(k); StreetSound(k, dt);
         foreach (var f in figs) if (f != null) f.brightness = f == oldManFig && keep ? kf : f == ladyFig && keep ? kw : keptFigs.Contains(f) ? 1f : k;
         foreach (var r in fruit) { mpb.SetColor(BaseColor, new Color(0.9f * 1.6f, 0.3f * 1.6f, 0.04f * 1.6f, 1f) * kf); r.SetPropertyBlock(mpb); }
@@ -551,6 +553,15 @@ public partial class StreetScene : MonoBehaviour
         }
         foreach (var c in problemSpots)
                 for (int i = 0; i < 8; i++) { float a = (float)prnd.NextDouble() * Mathf.PI * 2f, r = 0.8f + (float)prnd.NextDouble() * 2.2f; Litter(c + (right * Mathf.Cos(a) + fwd * Mathf.Sin(a)) * r, (float)prnd.NextDouble(), 1.8f); }
+        // author 2026-11-24: litter round every chained person at the intersections (cans, bottles, cups, paper, bags): 14 pieces within 3.5 m and 8 more out to 7 m
+        for (int ii = -3; ii <= 3; ii++)
+            for (int jj = -3; jj <= 3; jj++)
+            {
+                if (ii == 0 && jj == 0) continue;
+                var ic = P(28f * ii, 0f, 28f * jj); float dd = new Vector2(ic.x - origin.x, ic.z - origin.z).magnitude; if (dd < 14f || dd > 105f || (cleanNear && dd < nearClean)) continue;   // none within the cleared area when the player acted
+                if (Over()) { yield return null; sw.Restart(); }
+                for (int i = 0; i < 22; i++) { float a = (float)prnd.NextDouble() * Mathf.PI * 2f, r = i < 14 ? 0.7f + (float)prnd.NextDouble() * 2.8f : 3.5f + (float)prnd.NextDouble() * 3.5f; Litter(ic + (right * Mathf.Cos(a) + fwd * Mathf.Sin(a)) * r, (float)prnd.NextDouble(), 1.8f); }
+            }
         // bicycle lying on the ground at (-3.5, 6): two wheels flat on the ground, a frame between them
         var bc = P(-3.5f, 0.05f, 6f);
         if (!cleanNear)                                                                                // the bicycle and the stroller are near problems: gone when the player acted
@@ -638,15 +649,15 @@ public partial class StreetScene : MonoBehaviour
     {
         if (head == null || root == null) return;
         float swell = Mathf.SmoothStep(0.45f, 1f, Mathf.Clamp01(t / 45f));   // the street sound grows over the first 45 s while the fireworks (Spectacle.Duck) die down: the street slowly overtakes them
-        Spectacle.Duck = Mathf.Lerp(1f, 0.1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 45f))); k *= swell;
+        Spectacle.Duck = cleanNear ? 0.9f : Mathf.Lerp(1f, 0.1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 45f))); k *= swell;   // cleanNear = scene 6 after the player acted in scene 5 (author 2026-11-24): the fireworks stay loud and are not overtaken, the screaming and sirens are a little quieter
         if (crowdHs.Count == 0)
         {
             Ring(crowdHs, "street_crowd", 6, 30f, 70f, 12f); Ring(panicHs, "street_panic", 4, 45f, 90f, 18f);
             foreach (var p in policeAt) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
         }
         foreach (var h in crowdHs) h.Volume = 0.35f * k;
-        foreach (var h in panicHs) h.Volume = (scene6 ? 0.4f : 0.28f) * k;
-        foreach (var h in sirenHs) h.Volume = 0.7f * k;
+        foreach (var h in panicHs) h.Volume = (cleanNear ? 0.22f : scene6 ? 0.4f : 0.28f) * k;   // acted: 0.22, a little under scene 3 (0.28)
+        foreach (var h in sirenHs) h.Volume = (cleanNear ? 0.56f : 0.7f) * k;   // acted: 80 percent of scene 3
         if ((nextHorn -= dt) <= 0f) { nextHorn = Random.Range(5f, 12f); Sfx.Play("car_horn", Around(Random.Range(25f, 45f)), 0.7f * k, true, 90f, 6f); }
         if ((nextGroan -= dt) <= 0f) { nextGroan = Random.Range(10f, 20f); Sfx.Play("groan", Around(Random.Range(12f, 25f)), 0.5f * k, true, 50f, 2f); }
         if ((nextPunch -= dt) <= 0f) { nextPunch = Random.Range(1.2f, 3f); punchLeft = Random.Range(1, 4); }
@@ -979,6 +990,33 @@ public partial class StreetScene : MonoBehaviour
                     var seat = bs[0] + bs[1] * (0.4f * sd); float d = new Vector2(seat.x - origin.x, seat.z - origin.z).magnitude;
                     queue.Add(new Spec { clip = sitClips[sd > 0 ? 0 : sitClips.Length - 1], pos = seat, dir = bs[2], speed = 0f, count = d < 35f ? 450 : 300 });
                 }
+        // author 2026-11-24: at EVERY intersection stands a person chained like the player was: a helix of links round the chest, and a chain from each side of the belt down to the wrist.
+        // They stand still (the idle clip) facing a different way each. Same grey links as the player's chains; one particle system for all of them.
+        if (idle != null)
+        {
+            var cp = new List<Vector3>(); var cc = new List<Color>(); var cs = new List<float>(); var crn = new System.Random(404);
+            for (int ii = -3; ii <= 3; ii++)
+                for (int jj = -3; jj <= 3; jj++)
+                {
+                    if (ii == 0 && jj == 0) continue;                                              // the player stands on that one
+                    var c = P(28f * ii, 0f, 28f * jj); float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 14f || d > 105f) continue;
+                    var f = Quaternion.Euler(0f, (float)crn.NextDouble() * 360f, 0f) * Vector3.forward; var rt = Vector3.Cross(Vector3.up, f);
+                    queue.Add(new Spec { clip = idle, pos = c, dir = f, speed = 0f, count = 260 });
+                    if (((ii + jj) & 1) == 0 && d < 85f && !(cleanNear && d < nearClean))        // author 2026-11-24: a problem close to every second chained person: someone beaten down with a kneeling helper, a fight, or a stabbing
+                    {
+                        float pa = (float)crn.NextDouble() * Mathf.PI * 2f, yw = (float)crn.NextDouble() * Mathf.PI * 2f; var po = c + (right * Mathf.Cos(pa) + fwd * Mathf.Sin(pa)) * 4f;
+                        var ax = right * Mathf.Cos(yw) + fwd * Mathf.Sin(yw); int pt = Mathf.Abs(ii * 3 + jj) % 3;
+                        if (pt == 0 && fallen != null) { queue.Add(new Spec { clip = fallen, pos = po, yaw = yw * Mathf.Rad2Deg, count = 220 }); if (kneel != null) queue.Add(new Spec { clip = kneel, pos = po + ax * 1.1f, yaw = yw * Mathf.Rad2Deg + 180f, count = 220 }); }
+                        else if (pt == 1 && punchClips != null && punchClips.Length > 0 && hitClips != null && hitClips.Length > 0) { queue.Add(new Spec { clip = punchClips[crn.Next(punchClips.Length)], pos = po - ax * 0.55f, dir = ax, speed = 0f, count = 220 }); queue.Add(new Spec { clip = hitClips[crn.Next(hitClips.Length)], pos = po + ax * 0.55f, dir = -ax, speed = 0f, count = 220 }); }
+                        else if (stabbed != null) { queue.Add(new Spec { clip = stabbed, pos = po, yaw = yw * Mathf.Rad2Deg, count = 220 }); queue.Add(new Spec { clip = idle, pos = po + ax * 1.3f, yaw = yw * Mathf.Rad2Deg + 180f, count = 220 }); }
+                    }
+                    Vector3 Ch(float x, float y, float z) => c + rt * x + Vector3.up * y + f * z;
+                    for (int k = 0; k < 36; k++) { float u = k / 36f, a = u * 3f * 2f * Mathf.PI; cp.Add(Ch(Mathf.Cos(a) * 0.21f, 1.32f - u * 0.4f, Mathf.Sin(a) * 0.17f)); cc.Add(new Color(0.16f, 0.16f, 0.16f, 1f)); cs.Add(0.055f); }   // round the chest, three turns
+                    for (int side = -1; side <= 1; side += 2)
+                        for (int k = 0; k < 7; k++) { float u = k / 6f; cp.Add(Ch(side * Mathf.Lerp(0.2f, 0.24f, u), Mathf.Lerp(1.0f, 0.8f, u) - 0.05f * Mathf.Sin(u * Mathf.PI), Mathf.Lerp(0.0f, 0.12f, u))); cc.Add(new Color(0.16f, 0.16f, 0.16f, 1f)); cs.Add(0.05f); }   // belt to wrist, with a sag
+                }
+            if (cp.Count > 0) chainedR = MakeSystem("ChainedPeople", cp, cc, cs, out chainedMat);
+        }
         queue.Sort((x, y) => QDist(y).CompareTo(QDist(x)));                                  // nearest last: they are made first
     }
     float QDist(Spec sp) => new Vector2(sp.pos.x - origin.x, sp.pos.z - origin.z).magnitude;
@@ -1034,6 +1072,7 @@ public partial class StreetScene : MonoBehaviour
         if (crowdMat != null) Destroy(crowdMat);
         if (babyMat != null) Destroy(babyMat);
         if (policeMat != null) Destroy(policeMat);
+        if (chainedMat != null) Destroy(chainedMat);
         StopStreetSound(); Spectacle.Duck = 1f;
         root = null; lines = null; ring = null; womanFig = null; phase = Phase.Idle; t = 0f;
         Log("street ends");

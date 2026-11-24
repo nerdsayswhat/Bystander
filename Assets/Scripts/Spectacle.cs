@@ -26,6 +26,8 @@ public class Spectacle : MonoBehaviour
     };
 
     public Vector3 center = new Vector3(0f, 32f, 12f);      // world: high above and a little ahead, about 70 degrees up and 34 m away (the same distance as before, so the size looks the same)
+    public float frontShare = 0.6f;                         // share of the bursts that land in an arc in front of the player (70 degrees either side, 22 to 58 degrees up, 34 to 46 m away); the rest stay in the old high box
+    float yawRef, nextExtra, lastFlash; bool yawInit;
     public Vector3 spread = new Vector3(22f, 8f, 12f);      // half-sizes of the box around it where the flashes land
     public float maxPerSecond = 2.5f, maxGap = 1.3f;        // photosensitivity: the Event List says under 3 flashes a second
     public float maxScale = 3f;                             // each flash is a random 1 to maxScale times the base size
@@ -114,9 +116,13 @@ public class Spectacle : MonoBehaviour
         {
             onTime += dt;
             Gaze(dt);
-            if (Time.time >= nextFlash)
+            if (Time.time >= nextExtra && Time.time - lastFlash >= 0.4f && yawInit)   // author 2026-11-24: ADDED bursts all round the player, in front most of all; the old ones are untouched (same places, same rhythm). 0.4 s between any two bursts keeps it under 3 a second
             {
-                Flash();
+                Flash(true); lastFlash = Time.time; nextExtra = Time.time + Random.Range(0.5f, 1.3f);
+            }
+            if (Time.time >= nextFlash && Time.time - lastFlash >= 0.4f)
+            {
+                Flash(false); lastFlash = Time.time;
                 float min = 1f / Mathf.Max(maxPerSecond, 0.1f);
                 nextFlash = Time.time + Random.Range(min, Mathf.Max(min, maxGap));
             }
@@ -139,6 +145,8 @@ public class Spectacle : MonoBehaviour
     {
         if (head == null) return;
         GazeAngle = Vector3.Angle(head.forward, center - head.position);
+        var ff = new Vector3(head.forward.x, 0f, head.forward.z);                 // the way the player faces, followed slowly (about 7 s) so "in front" means where they have been looking, not a fixed world direction
+        if (ff.magnitude > 0.4f) { float hy = Mathf.Atan2(ff.x, ff.z) * Mathf.Rad2Deg; yawRef = yawInit ? Mathf.LerpAngle(yawRef, hy, 1f - Mathf.Exp(-0.15f * dt)) : hy; yawInit = true; }
         if (LookedUp) return;
         lookTime = GazeAngle < lookAngle ? lookTime + dt : 0f;
         if (lookTime < lookDwell) return;
@@ -148,9 +156,11 @@ public class Spectacle : MonoBehaviour
     }
 
     // one flash: big short-lived discs for the core and sparks flying out and shrinking, two palette colours per burst
-    void Flash()
+    void Flash(bool extra)
     {
-        var c = center + new Vector3(Random.Range(-spread.x, spread.x), Random.Range(-spread.y, spread.y), Random.Range(-spread.z, spread.z));
+        var c = center + new Vector3(Random.Range(-spread.x, spread.x), Random.Range(-spread.y, spread.y), Random.Range(-spread.z, spread.z));   // the old high box overhead
+        if (extra && head != null && yawInit)                                // the added bursts
+            c = head.position + Quaternion.Euler(-Random.Range(15f, 65f), yawRef + (Random.value < frontShare ? Random.Range(-70f, 70f) : Random.Range(-180f, 180f)), 0f) * Vector3.forward * Random.Range(34f, 50f);   // 55 percent in a front arc, 45 percent in every direction round the player
         int ia = Random.Range(0, Palette.Length), ib = (ia + Random.Range(1, Palette.Length)) % Palette.Length;   // two different colours per burst
         Color a = Palette[ia], b = Palette[ib];
         float k = Random.Range(1f, maxScale);                                   // each burst is 1 to maxScale times the base size (discs and spread together)
