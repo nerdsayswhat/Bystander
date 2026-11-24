@@ -19,6 +19,7 @@ public class WomanDogScene : MonoBehaviour
     public float womanAt = -25f, womanAway = 1.1f;         // degrees left of where the head pointed at the start (negative = right), metres
     public float dogAt = -115f, dogAway = 1.25f;           // renamed so stale saved values are dropped: about 1.2 m between them
     public float womanFar = 3.6f, dogGap = 1.2f, dogRun = 1.4f, dogStop = 1.0f;   // she is 3.6 m out (new fields: the saved scene overrides womanAway); the dog is only 1.2 m from her; he runs to the player at 3.5 m/s once the ball is taken. The ball stays at the old midpoint (womanAway/dogAway)
+    public float seatedBallScale = 0.65f;                  // seated player: the ball lies this fraction of its usual distance (0.8 m) from them
     public float womanTweak = 0f;                           // fine-tune: extra turn in degrees on top of "right hand towards the dog" (negative = anticlockwise seen from above); renamed value kept 0
     public float ballSize = 0.04f, ballRest = 0.04f, litFull = 35f, litFade = 75f;
     public Color woman = new Color(0.06f, 0.012f, 0.16f);   // x emission 10 = (0.6, 0.12, 1.6): purple, blue clips to full so it stays purple
@@ -68,7 +69,7 @@ public class WomanDogScene : MonoBehaviour
         {
             vy -= 9.8f * dt;
             var p = ballTr.position; p.y += vy * dt;
-            if (p.y <= ballSize) { p.y = ballSize; falling = false; }
+            if (p.y <= ballSize + Accessibility.Lift) { p.y = ballSize + Accessibility.Lift; falling = false; }
             ballTr.position = p;
         }
         if (calmed)
@@ -113,6 +114,7 @@ public class WomanDogScene : MonoBehaviour
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
         ballPos = (At(womanAt, womanAway) + At(dogAt, dogAway)) * 0.5f;          // the ball stays where it always was
+        if (Accessibility.Seated) ballPos = origin + (ballPos - origin) * seatedBallScale;   // author 2026-11-24: closer to a seated player
         womanPos = At(womanAt, womanFar);
         var toOldDog = At(dogAt, dogAway) - At(womanAt, womanAway); toOldDog.y = 0f;
         dogPos = womanPos + toOldDog.normalized * dogGap; PlacedWoman = womanPos; PlacedDog = dogPos; HasPlaced = true;
@@ -139,7 +141,7 @@ public class WomanDogScene : MonoBehaviour
         s.SetActive(false);                                                      // components are added while inactive so the SDK injections land before Awake and Start
         s.name = "GreenBall";
         s.transform.localScale = Vector3.one * ballSize * 2f;
-        s.transform.position = ballPos + Vector3.up * ballRest;
+        s.transform.position = ballPos + Vector3.up * (ballRest + Accessibility.Lift);
         ballTr = s.transform; ballR = s.GetComponent<Renderer>();
         Prepare(ballR, mat);
         s.AddComponent<BreakTarget>();

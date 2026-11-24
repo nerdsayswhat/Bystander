@@ -24,7 +24,7 @@ public class ChainWrap : MonoBehaviour
     public Vector3 beltAnchor = new Vector3(0.28f, 0.6f, 0.12f);  // cuff chain end: side, height below head, forward (mirrored for left)
     public float sag = 0.06f;                                     // near taut: a slack chain reads as a rope
     public float reach = 0.35f;                                  // max anchor -> hand distance before the hand is held
-    public float stretchLook = 2f;                                // how much the links themselves elongate and spread apart while stretched (1 = just the extra reach)
+    public float stretchShow = 4f;                                // (renamed from stretchLook 2, which Scene 2.unity overrides: the 2026-11-24 log showed hands reaching objects at 0.30 to 0.48 m on a 0.35 m chain, a stretch of up to 1.4x that barely read) how much the links elongate while stretched
     public float reachExtra = 0.2f;                                 // extra reach (m) the chain gives, only while the hand is aimed at a BreakTarget
     public float pullRange = 0.25f;                               // extra real-hand pull (m) for full strain
     public float tremble = 0.002f;                                // peak shake (m) when the hand is pulled out in any OTHER direction; grows with the pull
@@ -33,7 +33,8 @@ public class ChainWrap : MonoBehaviour
     Color Rest => new Color(linkColor.r * restDim, linkColor.g * restDim, linkColor.b * restDim, 1f);
     public float tremorStart = 0.75f;                             // fraction of reach where shaking and colour start
     public float awayStart = 0.3f, awayFull = 0.45f;              // hand distance from the body axis (m) where resistance fades in; nothing inside awayStart
-    public float bodyBack = 0.08f;                                // chest sits this far behind the head
+    public float torsoLen = 0.6f;                                 // hips to head (m): bending swings the head forward by this much times the sine of the lean, and the belt does not follow
+    public float bodyBack = 0.08f;                               // chest sits this far behind the head
     public float follow = 2f;                                     // how fast the wrap re-centres on the player (1/s)
 
     public bool armed = true;                                     // the sequencer switches this off outside the break window
@@ -42,6 +43,7 @@ public class ChainWrap : MonoBehaviour
     // The three fields were RENAMED (breakHold, reachDist, pullNeeded) because Scene 2.unity holds the old values and would override new defaults.
     public float breakHold = 1.0f;                                // seconds of deliberate grab (pulling, bent over) to break (was holdFor 1.0)
     public float reachDist = 0.6f;                                // m: the real hand must be this close to a BreakTarget to count as reaching (was reachDist2 0.45)
+    public float seatedLean = 0.1f;                                 // m: the same check for a seated player (Accessibility.Seated): a small lean forward
     public float bendNeeded = 0.35f;                              // m: the head must be this far below the highest it has been (the player's own standing, or seated, height). 0 = no posture needed: the accessible setting for a seated player
     float standY; bool bent = true;
     public float torsoFollowBend = 0.7f;                          // the chest chains sink this fraction of how far the head drops (the chest goes down less than the head)
@@ -242,7 +244,24 @@ public class ChainWrap : MonoBehaviour
     {
         var f = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         var p = head.position - f * bodyBack;
+        // author 2026-11-24: "my real arms reach the object before the chains even stretch". Bending carried the whole belt forward with the head, so the anchors
+        // arrived at the object and nothing needed to stretch. The hips stay put when you bend: subtract how far the head swings forward as it drops (a torso of
+        // `torsoLen` pivoting at the hips), along the facing yaw (the head's own forward is unusable when looking down).
+        float drop = Mathf.Clamp(topY - head.position.y, 0f, torsoLen);
+        float lean = Mathf.Sqrt(Mathf.Max(0f, torsoLen * torsoLen - (torsoLen - drop) * (torsoLen - drop)));
+        p -= Heading(head) * lean;
         return new Vector3(p.x, 0f, p.z);
+    }
+
+    // which way the player faces on the floor, also when the head is pitched far down or up: head.eulerAngles.y flips by about 180 degrees there (the 2026-11-24 headset
+    // log put the belt 1 m behind the player), so look at where the top of the head points instead once the forward vector is nearly vertical
+    static Vector3 Heading(Transform h)
+    {
+        var f = h.forward; var fl = new Vector3(f.x, 0f, f.z);
+        if (fl.magnitude > 0.5f) return fl.normalized;
+        var u = h.up; var ul = new Vector3(u.x, 0f, u.z);
+        if (ul.sqrMagnitude < 1e-4f) return fl.sqrMagnitude > 1e-6f ? fl.normalized : Vector3.forward;
+        return (f.y < 0f ? ul : -ul).normalized;      // looking down: the top of the head points ahead; looking up: it points behind
     }
 
     void BuildTorso()
@@ -305,7 +324,7 @@ public class ChainWrap : MonoBehaviour
     void Update()
     {
         if (left.links == null) return;
-        if (Camera.main != null) { float hy = Camera.main.transform.position.y; standY = Mathf.Max(standY, hy); bent = bendNeeded <= 0f || standY - hy >= bendNeeded; }
+        if (Camera.main != null) { float hy = Camera.main.transform.position.y; standY = Mathf.Max(standY, hy); float need = Accessibility.Seated ? seatedLean : bendNeeded; bent = need <= 0f || standY - hy >= need; }
         if (Broken) { Scatter(); return; }
         if (hidden)
         {
@@ -329,10 +348,12 @@ public class ChainWrap : MonoBehaviour
         mpb.SetColor(BaseColor, Color.Lerp(Rest, strainColor, r));
         // author 2026-11-23: bending down left the chest chains at standing height, so the head came down into them and they blocked the view. The wrap now sinks with the bend
         // (torsoFollowBend of the head's drop); no fade near the eyes (author: not wanted).
-        torsoDrop = Mathf.Lerp(torsoDrop, torsoFollowBend * Mathf.Max(0f, topY - Camera.main.transform.position.y), 1f - Mathf.Exp(-10f * Time.deltaTime));
+        torsoDrop = Mathf.Lerp(torsoDrop, (Accessibility.Seated ? 0.15f : torsoFollowBend) * Mathf.Max(0f, topY - Camera.main.transform.position.y), 1f - Mathf.Exp(-10f * Time.deltaTime));
         for (int i = 0; i < torso.Length; i++)
         {
-            torso[i].position = body + torsoOff[i] + Vector3.down * torsoDrop + Random.insideUnitSphere * tr;
+            var to = torsoOff[i];
+            if (Accessibility.Seated) to.y = (topY - 0.2f) + (to.y - (topY - 0.25f)) * 0.5f;   // author 2026-11-24: seated, the wrap sat on the hips: it is now half as tall and starts 0.2 m below the head (chest to belly)
+            torso[i].position = body + to + Vector3.down * torsoDrop + Random.insideUnitSphere * tr;
             torsoR[i].SetPropertyBlock(mpb);
         }
         FillParticles();
@@ -444,7 +465,7 @@ public class ChainWrap : MonoBehaviour
         var mid = (s.anchor + end) * 0.5f + Vector3.down * sag * (1f - strain);
         float len = Mathf.Max((end - s.anchor).magnitude, 0.01f);   // ponytail: straight-line length approximates the arc
         float stretched = Mathf.Max(1f, len / reach);                // 1 at normal reach, above 1 while stretched
-        s.elong = 1f + (stretched - 1f) * stretchLook;               // each link elongates along the chain
+        s.elong = 1f + (stretched - 1f) * stretchShow;               // each link elongates along the chain
         for (int i = 0; i < s.links.Length; i++)
         {
             float t = (i + 0.5f) * linkSpacing * stretched / len, u = 1f - t;   // same number of links, spread further apart

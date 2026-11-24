@@ -143,7 +143,7 @@ public class OldManScene : MonoBehaviour
         var mat = Resources.Load<Material>("OrangeSphere");
         var b = CanBinScene.PaperBag(null, mat, out bagRs, out bagKs);
         bagTr = b.transform;
-        bagTr.position = At(bagLeft, bagDist) + Vector3.up * 0.05f; PlacedBag = bagTr.position;
+        bagTr.position = At(bagLeft, bagDist) + Vector3.up * (0.05f + Accessibility.Lift); PlacedBag = bagTr.position;
         bagTr.rotation = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up) * Quaternion.Euler(0f, 0f, 90f);   // lying on its side
         b.SetActive(false);
 
@@ -155,7 +155,7 @@ public class OldManScene : MonoBehaviour
             if (i > 1)
                 for (int tries = 0; tries < 40; tries++)
                 {
-                    rest = At(Random.Range(28f, 75f), Random.Range(0.4f, 0.85f));   // all within a bend and a reach: nobody walks in this film
+                    rest = At(Random.Range(28f, 75f), Random.Range(0.4f, 0.72f));   // all within a bend and a reach (0.85 before the belt stopped following the bend: every orange must be reachable): nobody walks in this film
                     bool ok = Flat(rest - oldManPos).magnitude > 0.3f && Flat(rest - bagTr.position).magnitude > 0.2f;
                     foreach (var r in rests) ok &= Flat(rest - r).magnitude > 0.14f;
                     if (ok) break;
@@ -175,7 +175,7 @@ public class OldManScene : MonoBehaviour
             o.grab.InjectOptionalPointableElement(g);
             o.grab.enabled = false;                               // grabbing opens when the chains break
             g.WhenPointerEventRaised += e => OnGrab(o, e.Type);
-            o.rest = rest + Vector3.up * orangeRadius;
+            o.rest = rest + Vector3.up * (orangeRadius + Accessibility.Lift);
             o.start = bagTr.position;
             o.delay = Random.Range(0f, 0.25f);
             o.dur = 0.5f + Vector3.Distance(o.start, o.rest) * 0.9f;
@@ -217,12 +217,12 @@ public class OldManScene : MonoBehaviour
     {
         foreach (var o in list)
         {
-            if (!given && !o.given && o.k >= 1f && o.tr.gameObject.activeSelf) o.grab.enabled = true;
+            if (!o.given && o.k >= 1f && o.tr.gameObject.activeSelf) o.grab.enabled = true;   // every orange stays grabbable, also after he has his (author 2026-11-24)
             if (o.falling && o.holder < 0)        // dropped: falls to the floor
             {
                 o.vy -= 9.8f * dt;
                 var p = o.tr.position; p.y += o.vy * dt;
-                if (p.y <= orangeRadius) { p.y = orangeRadius; o.falling = false; }
+                if (p.y <= orangeRadius + Accessibility.Lift) { p.y = orangeRadius + Accessibility.Lift; o.falling = false; }
                 o.tr.position = p;
             }
             if (o.given && o.hand != null)        // he holds his pose while the orange slides to his hand; when it touches, the receive clip plays and the orange stays in his hand
@@ -276,7 +276,7 @@ public class OldManScene : MonoBehaviour
 
     void Give(Orange o)
     {
-        given = true; seq.gaveOrange = true; givenAt = t; o.given = true; foreach (var x in list) x.grab.enabled = false;   // no more grabbing; the slide-in takes over
+        given = true; seq.gaveOrange = true; givenAt = t; o.given = true; o.grab.enabled = false;   // only the given orange stops being grabbable; the slide-in takes over
         o.giveFrom = o.tr.position; o.giveT = 0f;
         float y = o.tr.position.y;
         var clip = y < 0.5f ? receiveLow : y < 1f ? receiveMid : receiveHigh;
@@ -297,7 +297,7 @@ public class OldManScene : MonoBehaviour
         // author 2026-11-23: once he has taken his orange and the receive clip is over he fades out (about 3 s) with the orange in his hand; the rest of the scene carries on
         if (!leaving && given && figure != null && receiving != null && list.Exists(x => x.arrived) && figure.ClipTime >= receiving.length - 0.05f) { leaving = true; Log("the old man has his orange: he fades out"); }
         float fs = leaving ? 0.35f : 3f;
-        if (figure != null) figure.brightness = Mathf.MoveTowards(figure.brightness, leaving ? 0f : offering || given ? 1f : Lit(oldManPos + Vector3.up * 0.3f), fs * dt);   // while he takes an orange he stays lit, so it is not an orange floating in the dark
+        if (figure != null) figure.brightness = Mathf.MoveTowards(figure.brightness, leaving || phase == Phase.Dark ? 0f : offering || given ? 1f : Lit(oldManPos + Vector3.up * 0.3f), fs * dt);   // hidden until his fall starts (author 2026-11-24: he was visible, paused on his first frame)   // while he takes an orange he stays lit, so it is not an orange floating in the dark
         if (bagTr.gameObject.activeSelf)
         {
             bagLit = Mathf.MoveTowards(bagLit, leaving ? 0f : Lit(bagTr.position), (leaving ? 0.35f : 3f) * dt);   // the bag fades with him

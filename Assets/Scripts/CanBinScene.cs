@@ -69,7 +69,7 @@ public class CanBinScene : MonoBehaviour
             {
                 vy -= 9.8f * dt;
                 var p = canTr.position; p.y += vy * dt;
-                if (p.y <= 0.03f) { p.y = 0.03f; falling = false; }
+                if (p.y <= 0.03f + Accessibility.Lift) { p.y = 0.03f + Accessibility.Lift; falling = false; }
                 canTr.position = p;
             }
             if (binned)                                                                 // slides into the bin and goes out
@@ -152,8 +152,8 @@ public class CanBinScene : MonoBehaviour
         canTr = c.transform; canR = c.GetComponent<Renderer>();
         canTr.localScale = new Vector3(0.065f, 0.06f, 0.065f);                  // a soda can: 0.065 m across, 0.12 m long
         canTr.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 90f);    // lying on its side
-        canRest = At(canLeft, canAway) + Vector3.up * 0.033f; PlacedCan = canRest;
-        canFrom = At(canLeft + 8f, canAway + 1.1f) + Vector3.up * 0.033f;       // rolls in from further behind
+        canRest = At(canLeft, canAway) + Vector3.up * (0.033f + Accessibility.Lift); PlacedCan = canRest;
+        canFrom = At(canLeft + 8f, canAway + 1.1f) + Vector3.up * (0.033f + Accessibility.Lift);       // rolls in from further behind
         canTr.position = canFrom;
         Prepare(canR, mat);
         c.AddComponent<BreakTarget>();

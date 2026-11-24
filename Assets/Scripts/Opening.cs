@@ -173,7 +173,7 @@ public class Opening : MonoBehaviour
         {
             var s = slots[i]; var q = phr[i];
             q.pos = head.position + f * s.ahead + right * s.side;
-            q.pos.y = s.feet ? s.y : head.position.y + s.y;
+            q.pos.y = s.feet ? Mathf.Max(s.y, Accessibility.Lift) : head.position.y + s.y;   // seated: nothing lower than lap height
             q.text.text = s.text; q.state = 0; q.hand = -1; q.t = q.age = q.pop = 0f;
             q.root.gameObject.SetActive(true);
         }
