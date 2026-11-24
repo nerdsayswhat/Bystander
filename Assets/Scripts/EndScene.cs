@@ -18,7 +18,7 @@ public class EndScene : MonoBehaviour
     {
         "<b>BYSTANDER</b>", "", "A film by Ashwin Fulfagar", "",
         "<b>Motion capture</b>", "[performers and technicians to be written]", "",
-        "<b>Sound and music</b>", "[sound and music credits to be written]", "",
+        "<b>Sound</b>", "Sound Effect by DRAGON-STUDIO from Pixabay", "Sound Effect by freesound_community from Pixabay", "Sound Effect by floraphonic from Pixabay", "Sound Effect by Koi Roylers from Pixabay", "Sound Effect by Official Profile from Pixabay", "Sound Effect by Talha Developer from Pixabay", "",   // the author's list, 2026-11-24 (music credits and the voices still to be written)
         "<b>Made with</b>", "Unity", "Meta XR SDK", "Mixamo animations", "",
         "[thanks to be written]", "", "Thank you for watching."
     };

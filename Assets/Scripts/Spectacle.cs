@@ -40,6 +40,7 @@ public class Spectacle : MonoBehaviour
     public int Flashes { get; private set; }
     public bool LookedUp { get; private set; }
     public float GazeAngle { get; private set; } = -1f;     // degrees between where the head points and the spectacle
+    public static float Duck = 1f;                          // 1 = full; the street scenes bring it down slowly so the street sounds take over from the fireworks (author 2026-11-24)
     public float Volume => LookedUp ? 0.8f : Mathf.Min(1f, 0.5f + 0.1f * Mathf.Floor(onTime / Mathf.Max(nudgeEvery, 0.1f)));
 
     SceneSequencer seq; Transform head; ParticleSystem ps;
@@ -59,6 +60,12 @@ public class Spectacle : MonoBehaviour
 
     void Start()
     {
+        if (boomClips == null || boomClips.Length == 0)   // the author's fireworks (Assets/Resources/Audio/boom, boom_2 ... boom_7) when nothing is assigned in the scene
+        {
+            var list = new System.Collections.Generic.List<AudioClip>(); var c0 = Resources.Load<AudioClip>("Audio/boom"); if (c0 != null) list.Add(c0);
+            for (int i = 2; i < 12; i++) { var c = Resources.Load<AudioClip>("Audio/boom_" + i); if (c != null) list.Add(c); }
+            boomClips = list.ToArray();
+        }
         var go = new GameObject("SpectacleParticles");
         go.transform.SetParent(transform, false);
         ps = go.AddComponent<ParticleSystem>();
@@ -80,7 +87,7 @@ public class Spectacle : MonoBehaviour
         {
             var v = new GameObject("SpectacleVoice" + i).AddComponent<AudioSource>();
             v.transform.SetParent(transform, false);
-            v.playOnAwake = false; v.loop = false; v.spatialBlend = 1f; v.dopplerLevel = 0f;
+            v.playOnAwake = false; v.loop = false; v.spatialBlend = 1f; v.spatialize = true; v.dopplerLevel = 0f;
             v.rolloffMode = AudioRolloffMode.Linear; v.minDistance = 100f; v.maxDistance = 300f;   // full volume out to 100 m: it is far away but loud
             voices[i] = v;
         }
@@ -162,7 +169,7 @@ public class Spectacle : MonoBehaviour
         var v = voices[voice++ % voices.Length];
         v.transform.position = c;
         v.clip = boomClips[Random.Range(0, boomClips.Length)];
-        v.volume = Volume; v.pitch = Random.Range(0.9f, 1.1f);
+        v.volume = Volume * Duck; v.pitch = Random.Range(0.9f, 1.1f);
         v.PlayDelayed(Random.Range(0.1f, 0.3f));   // far away: the sound trails the light
     }
 

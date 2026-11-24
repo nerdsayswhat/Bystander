@@ -85,6 +85,15 @@ public class ChainWrap : MonoBehaviour
     public float RightAim => right.aim;
     public float LeftHold => left.hold;
     public float RightHold => right.hold;
+    Sfx.Handle rattle, strain;   // chain sounds: a rattle that grows with the pull, a creak that rises while the reach is held (files Audio/chain_rattle and Audio/chain_strain)
+    void ChainSound(float r, float hold)
+    {
+        if (Camera.main == null) return;
+        var p = Camera.main.transform.position + Vector3.down * 0.4f;
+        if (rattle == null) rattle = Sfx.Loop("chain_rattle", p, 0f);
+        if (strain == null) strain = Sfx.Loop("chain_strain", p, 0f);
+        rattle.Position = p; rattle.Volume = r * 0.8f; strain.Position = p; strain.Volume = Mathf.Clamp01(hold) * 0.9f;
+    }
     public float LeftShake => left.shake;
     public float RightShake => right.shake;
 
@@ -344,6 +353,7 @@ public class ChainWrap : MonoBehaviour
         LogHaze();
         if (left.hold >= breakHold || right.hold >= breakHold) { Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} chain break: head {Camera.main.transform.position.y:0.00} m, {standY - Camera.main.transform.position.y:0.00} m below its highest ({standY:0.00}), needed {bendNeeded:0.00}"); Break(); return; }   // return: the rest of Update would refill the particles from hidden links (size 0)
         float r = Mathf.Max(left.resist, right.resist);   // the whole chain lightens when either hand pulls
+        ChainSound(r, Mathf.Max(left.hold, right.hold) / breakHold);
         float tr = Mathf.Max(left.shake, right.shake);   // and shakes with the harder-shaking hand
         mpb.SetColor(BaseColor, Color.Lerp(Rest, strainColor, r));
         // author 2026-11-23: bending down left the chest chains at standing height, so the head came down into them and they blocked the view. The wrap now sinks with the bend
@@ -398,7 +408,7 @@ public class ChainWrap : MonoBehaviour
     {
         if (Broken || left.links == null) return;
         Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} chain break snapshot yaw {yaw:0} body ({body.x:0.00},{body.y:0.00},{body.z:0.00}) | L {Describe(true)} | R {Describe(false)}");
-        Broken = true; brokenAt = Time.time;
+        Broken = true; brokenAt = Time.time; rattle?.Stop(); strain?.Stop(); if (Camera.main != null) Sfx.Play("chain_snap", Camera.main.transform.position + Vector3.down * 0.4f);
         Debug.Log($"ChainWrap: chain broken at {Time.time:0.00}s (fireEvent {fireEvent})");   // lines this up with a trace in logcat
         foreach (var s in new[] { left, right })
             if (s.synth != null) s.synth.FreeWrist(SyntheticHand.WristLockMode.Position);   // hands are free from now on

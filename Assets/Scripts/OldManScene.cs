@@ -80,7 +80,7 @@ public class OldManScene : MonoBehaviour
             case Phase.Dark:
                 if (t >= (scene5 ? scene5Start : 0f) + fallDelay)
                 {
-                    figure.playing = true; fallAt = t; phase = Phase.Falling;
+                    figure.playing = true; fallAt = t; phase = Phase.Falling; Sfx.Play("oldman_fall", oldManPos + Vector3.up * 0.2f);
                     Log("old man falls");
                 }
                 break;
@@ -95,7 +95,7 @@ public class OldManScene : MonoBehaviour
                 }
                 if (dismiss != null && !dismissed && !freed && ((dwell >= dismissAfterLook && t >= fallAt + 6f) || t >= fallAt + dismissLatest))
                 {
-                    figure.Play(dismiss, false); phase = Phase.Dismissed; dismissedAt = t;
+                    figure.Play(dismiss, false); phase = Phase.Dismissed; dismissedAt = t; Sfx.Play("oldman_dont_bother", MouthPos(), 0.55f, true, 25f, 1.5f, 3.2f);   // quieter, and 3.2 s after the wave starts (author 2026-11-24); from his head, directional
                     Log($"old man dismisses ({t - fallAt:0.0}s after the fall, looked {dwell:0.0}s)");
                 }
                 break;
@@ -186,10 +186,12 @@ public class OldManScene : MonoBehaviour
         Log(scene5 ? "scene 5 beat 2 begins (no chains)" : "scene 2 beat 1 begins");
     }
 
+    Vector3 MouthPos() { var h = figure != null ? figure.Bone(HumanBodyBones.Head) : null; return h != null ? h.position : oldManPos + Vector3.up * 1.4f; }   // where his voice comes from: his head
+
     void Spill()
     {
         spilled = true;
-        bagTr.gameObject.SetActive(true);
+        bagTr.gameObject.SetActive(true); Sfx.Play("bag_hit", bagTr.position);
         foreach (var o in list) { o.tr.position = o.start; o.tr.gameObject.SetActive(true); }
         Log($"bag hits the floor, {list.Count} oranges spill (two roll to the player's feet)");
     }
@@ -203,7 +205,8 @@ public class OldManScene : MonoBehaviour
             if (o.k >= 1f) continue;
             o.delay -= dt;
             if (o.delay > 0f) continue;
-            o.k = Mathf.Min(1f, o.k + dt / o.dur);
+            bool wasRolling = o.k < 1f; o.k = Mathf.Min(1f, o.k + dt / o.dur);
+            if (wasRolling && o.k >= 1f) Sfx.Play("orange_roll", o.tr.position, 1f, true, 30f, 2f);   // the thud is where each orange comes to rest (two land at the player's feet), not back at the bag where they start
             var next = Vector3.Lerp(o.start, o.rest, 1f - Mathf.Pow(1f - o.k, 3f));
             var move = next - o.tr.position;
             if (move.sqrMagnitude > 1e-8f) o.tr.Rotate(Vector3.Cross(Vector3.up, move.normalized), move.magnitude / orangeRadius * Mathf.Rad2Deg, Space.World);
@@ -233,7 +236,7 @@ public class OldManScene : MonoBehaviour
                     o.tr.position = Vector3.Lerp(o.giveFrom, o.hand.position, Mathf.SmoothStep(0f, 1f, o.giveT));
                     if (o.giveT >= 1f)
                     {
-                        o.arrived = true; givenAt = t;
+                        o.arrived = true; givenAt = t; Sfx.Play("oldman_thanks", MouthPos(), 0.9f, true, 25f, 1.5f);
                         figure.playing = true;                      // the rest of the receive clip: he takes it
                         Log($"{o.tr.name} touches his hand: he takes it");
                     }

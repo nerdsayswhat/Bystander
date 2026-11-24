@@ -88,7 +88,7 @@ public partial class StreetScene : MonoBehaviour
         mpb.SetColor(BaseColor, Color.white * lineBright * k); lines.SetPropertyBlock(mpb);
         if (ring != null) { mpb.SetColor(BaseColor, Color.white * 2.5f * k); ring.SetPropertyBlock(mpb); }
         crowdMat.SetColor(BaseColor, Color.white * 10f * k); babyMat.SetColor(BaseColor, Color.white * 10f * k);
-        UpdatePolice(k);
+        UpdatePolice(k); StreetSound(k, dt);
         foreach (var f in figs) if (f != null) f.brightness = f == oldManFig && keep ? kf : f == ladyFig && keep ? kw : keptFigs.Contains(f) ? 1f : k;
         foreach (var r in fruit) { mpb.SetColor(BaseColor, new Color(0.9f * 1.6f, 0.3f * 1.6f, 0.04f * 1.6f, 1f) * kf); r.SetPropertyBlock(mpb); }
         if (womanFig != null && womanFig.Skeleton != null)                                 // the scared woman crosses the street, in place and moved along
@@ -615,6 +615,45 @@ public partial class StreetScene : MonoBehaviour
         // author 2026-11-23: the clean lit rings round the player's feet were removed; the cleared area (nearClean) is the only sign of what the player did
     }
 
+    // the street's sound (author's recordings, Assets/Resources/Audio). EVERY source is directional 3D with distance fall-off (author 2026-11-24), nothing is a flat stereo bed:
+    //  - the crowd murmur: a ring of 6 sources round the player at about 30 m, the scared crowd: 4 sources at about 45 m, each loop started at a different point so they do not pulse together
+    //  - a siren loop at EVERY police light point (they come from where the blue and red glows are, getting louder as you turn towards them)
+    //  - punches (synthesized for now) in bursts of 1 to 3 from random directions, 8 to 40 m away; a car horn and a groan now and then from random directions
+    // The sources are children of the street root, so they sink with the street.
+    readonly List<Sfx.Handle> crowdHs = new List<Sfx.Handle>(), panicHs = new List<Sfx.Handle>(), sirenHs = new List<Sfx.Handle>();
+    readonly List<Vector3> policeAt = new List<Vector3>();
+    float nextHorn = 4f, nextGroan = 9f, nextPunch = 3f, punchGap; int punchLeft;
+    Vector3 Around(float d, float h = 1f) { float a = Random.value * Mathf.PI * 2f; return root.transform.TransformPoint(P(Mathf.Cos(a) * d, h, Mathf.Sin(a) * d)); }
+    void Ring(List<Sfx.Handle> list, string clip, int n, float radius, float maxDist, float minDist)
+    {
+        float a0 = Random.value * Mathf.PI * 2f;
+        for (int i = 0; i < n; i++)
+        {
+            float a = a0 + i * Mathf.PI * 2f / n;
+            var h = Sfx.Loop(clip, root.transform.TransformPoint(P(Mathf.Cos(a) * radius, 2f, Mathf.Sin(a) * radius)), 0f, true, maxDist, minDist);
+            h.Seek(Random.value); h.Attach(root.transform); list.Add(h);
+        }
+    }
+    void StreetSound(float k, float dt)
+    {
+        if (head == null || root == null) return;
+        float swell = Mathf.SmoothStep(0.45f, 1f, Mathf.Clamp01(t / 45f));   // the street sound grows over the first 45 s while the fireworks (Spectacle.Duck) die down: the street slowly overtakes them
+        Spectacle.Duck = Mathf.Lerp(1f, 0.1f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 45f))); k *= swell;
+        if (crowdHs.Count == 0)
+        {
+            Ring(crowdHs, "street_crowd", 6, 30f, 70f, 12f); Ring(panicHs, "street_panic", 4, 45f, 90f, 18f);
+            foreach (var p in policeAt) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
+        }
+        foreach (var h in crowdHs) h.Volume = 0.35f * k;
+        foreach (var h in panicHs) h.Volume = (scene6 ? 0.4f : 0.28f) * k;
+        foreach (var h in sirenHs) h.Volume = 0.7f * k;
+        if ((nextHorn -= dt) <= 0f) { nextHorn = Random.Range(5f, 12f); Sfx.Play("car_horn", Around(Random.Range(25f, 45f)), 0.7f * k, true, 90f, 6f); }
+        if ((nextGroan -= dt) <= 0f) { nextGroan = Random.Range(10f, 20f); Sfx.Play("groan", Around(Random.Range(12f, 25f)), 0.5f * k, true, 50f, 2f); }
+        if ((nextPunch -= dt) <= 0f) { nextPunch = Random.Range(1.2f, 3f); punchLeft = Random.Range(1, 4); }
+        if (punchLeft > 0 && (punchGap -= dt) <= 0f) { punchLeft--; punchGap = Random.Range(0.12f, 0.3f); Sfx.Play("punch", Around(Random.Range(8f, 40f)), 0.9f * k, true, 70f, 3f); }
+    }
+    void StopStreetSound() { foreach (var h in crowdHs) h.Stop(); foreach (var h in panicHs) h.Stop(); foreach (var h in sirenHs) h.Stop(); crowdHs.Clear(); panicHs.Clear(); sirenHs.Clear(); nextHorn = 4f; nextGroan = 9f; nextPunch = 3f; punchLeft = 0; }
+
     // the bystanders: still columns (a head and a body of 36 particles) in clusters on the roads, and the baby in the stroller
     // author 2026-11-24: red and blue police lights, as if the cars were behind buildings. The cars are never drawn: only a few strobing cores (hard little lights, as if seen
     // through gaps and over roofs) and large soft halos around them, washing the facades and the air above the roofs. Red and blue alternate, each spot at its own phase.
@@ -656,6 +695,7 @@ public partial class StreetScene : MonoBehaviour
             bool close = false; foreach (var q in spots) if ((q - c).sqrMagnitude < 1225f) close = true;
             if (!close) { bool ax = prnd.NextDouble() < 0.5; var rdir = ax ? right : fwd; var pdir = ax ? fwd : right; spots.Add(c); roadDirs.Add(rdir); roadPts.Add(c + pdir * (prnd.NextDouble() < 0.5 ? 14f : -14f)); }   // the road that runs along one side of the block
         }
+        policeAt.Clear(); policeAt.AddRange(spots);                                   // the sirens sit at these points
         var pos = new List<Vector3>(); var sz = new List<float>(); var spot = new List<int>(); var blue = new List<bool>(); var core = new List<bool>(); var bas = new List<float>(); var ph = new List<float>();
         for (int s = 0; s < spots.Count; s++)
         {
@@ -994,6 +1034,7 @@ public partial class StreetScene : MonoBehaviour
         if (crowdMat != null) Destroy(crowdMat);
         if (babyMat != null) Destroy(babyMat);
         if (policeMat != null) Destroy(policeMat);
+        StopStreetSound(); Spectacle.Duck = 1f;
         root = null; lines = null; ring = null; womanFig = null; phase = Phase.Idle; t = 0f;
         Log("street ends");
     }

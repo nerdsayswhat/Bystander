@@ -97,7 +97,7 @@ public class ParticleDog : MonoBehaviour
         if (ps == null) return;
         float dt = Time.deltaTime;
         barkT += dt;
-        if (barking && barkT >= barkEvery) barkT = 0f;
+        if (barking && barkT >= barkEvery) { barkT = 0f; Sfx.Play("dog_bark", transform.position + Vector3.up * 0.3f); }
         float e = !barking ? 0f : barkT < 0.06f ? barkT / 0.06f : Mathf.Exp(-5f * (barkT - 0.06f));   // 0..1, sharp rise, quick decay
         Flare = e;
         if (!barking && lookAt != null)                                                                 // calm: turn to face the player

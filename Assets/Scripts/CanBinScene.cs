@@ -172,7 +172,7 @@ public class CanBinScene : MonoBehaviour
     void Appear()
     {
         binTr.gameObject.SetActive(true); canTr.gameObject.SetActive(true);
-        phase = Phase.Rolling;
+        phase = Phase.Rolling; Sfx.Play("can_kick", canFrom);   // the author's CanKick recording already contains the roll
         Log("a can rolls in from behind, the bin is by the player's feet");
     }
 
@@ -187,7 +187,7 @@ public class CanBinScene : MonoBehaviour
             float far = Vector3.Distance(new Vector3(p.x, 0f, p.z), new Vector3(binPos.x, 0f, binPos.z));
             if (far < binReach && p.y < 0.9f)
             {
-                binned = true; seq.binnedCan = true; dropFrom = p; dropT = 0f; flash = 1f; doneAt = t; grab.enabled = false;
+                binned = true; Sfx.Play("can_in_bin", binPos + Vector3.up * 0.3f); seq.binnedCan = true; dropFrom = p; dropT = 0f; flash = 1f; doneAt = t; grab.enabled = false;
                 Log($"can dropped in the bin ({far:0.00} m from its centre, {p.y:0.00} m high)");
             }
             else { falling = true; vy = 0f; Log($"can dropped {far:0.00} m from the bin at {p.y:0.00} m high (it goes in within {binReach:0.00} m)"); }

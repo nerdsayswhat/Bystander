@@ -22,7 +22,7 @@ public class SceneSequencer : MonoBehaviour
     // lengths in seconds from the Bystander Event List (2026-10-26): the sum of each scene's beats, 13:35 in all on the longest path
     public Step[] steps =
     {
-        new Step { name = "Warning", autoAdvance = 10f },
+        new Step { name = "Warning", autoAdvance = 25f },
         new Step { name = "Tutorial: phrases to your heart", autoAdvance = 75f },          // 25 + 25 + 25
         new Step { name = "1 Darkness: chained", autoAdvance = 34f },                      // author 2026-10-27: first flash at 10 s, scene 2 at 35 s (34 + the 1 s fade); the Event List said 25 + 45
         new Step { name = "2 Darkness: the three events", autoAdvance = 100f, breakWindow = true },   // 25 + 25 + 50 (author 2026-11-09: the old man and the can sooner; was 45 + 40 + 50 = 135)
@@ -38,7 +38,7 @@ public class SceneSequencer : MonoBehaviour
     public int firstPlaceholder = 4;              // steps from here on are not built yet: their name shows low in the view (step 3, scene 2, has the old man beat so far)
     public float fadeTime = 1f;
     public static readonly bool TestBeat3Only = false;   // build for testing the woman and the dog only: starts at the Scene 2 step (editor or build), no old man, no can, the woman appears after 3 s. Set false for the real film.
-    public static readonly string TestStartsAt = "3";   // test start: a build begins at the first step whose name starts with this ("3" the street, "6" the street again, "4" the cards...); "" = the whole film from the warning
+    public static readonly string TestStartsAt = "";   // test start: a build begins at the first step whose name starts with this ("3" the street, "6" the street again, "4" the cards...); "" = the whole film from the warning
     public static readonly bool TestScene5Only = false;   // build for testing scene 5 only: starts at the "5 ..." step (no chains), editor or build. Set false for the real film.
     public static readonly bool TestCardsOnly = false;   // build for testing the cards only: starts at the "4 Cards" step (editor or build). Set false for the real film.
     public bool showLabel = true;                // placeholder labels on or off

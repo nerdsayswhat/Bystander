@@ -112,7 +112,7 @@ public class Opening : MonoBehaviour
         {
             var v = new GameObject("OpeningVoice" + i).AddComponent<AudioSource>();
             v.transform.SetParent(transform, false);
-            v.playOnAwake = false; v.spatialBlend = 1f; v.minDistance = 1f; v.maxDistance = 20f;
+            v.playOnAwake = false; v.spatialBlend = 1f; v.spatialize = true; v.minDistance = 1f; v.maxDistance = 20f;
             voices[i] = v;
         }
         swell = gameObject.AddComponent<AudioSource>();      // head-locked tone that swells as a held phrase nears the chest
