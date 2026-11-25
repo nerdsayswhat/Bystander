@@ -8,7 +8,7 @@ using UnityEngine.UI;
 // Self-spawns in the scene "Scene 2".
 public class Subtitles : MonoBehaviour
 {
-    public float dist = 1.5f, below = 0.32f, follow = 4f;     // m in front of the head, m below eye level, how quickly it follows the head (per second)
+    public float dist = 1.5f, below = 0.6f, follow = 4f;      // m in front of the head, m below eye level (0.32 was too high, author 2026-11-25), how quickly it follows the head (per second)
     public int fontSize = 56;
 
     struct Line { public string text; public float start, end; }

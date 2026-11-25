@@ -155,7 +155,7 @@ public class WomanDogScene : MonoBehaviour
         dogPos = womanPos + toOldDog.normalized * dogGap; PlacedWoman = womanPos; PlacedDog = dogPos; HasPlaced = true;
         awayDir = (womanPos - origin).normalized;                               // she walks directly away from the player
         // author 2026-11-24: the ball lies ON THE LINE THAT JOINS THE PLAYER AND THEM (the middle of the woman and the dog), closer to the player: same bearing, 1.0 m out on the floor (0.65 m when seated); no rolling
-        var mid = (womanPos + dogPos) * 0.5f - origin; mid.y = 0f; ballPos = origin + mid.normalized * (ballDist * (Accessibility.Seated ? seatedBall : 1f));
+        var mid = (womanPos + dogPos) * 0.5f - origin; mid.y = 0f; ballPos = origin + mid.normalized * (ballDist * (Accessibility.Seated ? seatedBall : 1f)); PlacedBone = ballPos;   // PlacedBone: the street puts its bone exactly here (it used to jump to the middle of the woman and the dog)
         mpb = new MaterialPropertyBlock();
 
         var prefab = Resources.Load<GameObject>("Prefab/ParticleFigure");
@@ -251,7 +251,7 @@ public class WomanDogScene : MonoBehaviour
 
     public static ParticleFigure HandOver;                                          // the lady, alive, for the street to adopt (set in End, cleared by StreetScene)
     public static bool HasYaw; public static float PlacedYaw;                      // the turn her skeleton ended with in Appear (world yaw, degrees)
-    public static bool HasPlaced; public static Vector3 PlacedWoman, PlacedDog;     // for the street scenes that follow: the woman and the dog stay exactly there
+    public static bool HasPlaced; public static Vector3 PlacedWoman, PlacedDog, PlacedBone;    // for the street scenes that follow: the woman and the dog stay exactly there
     Vector3 At(float leftDeg, float dist) => origin + Quaternion.AngleAxis(-leftDeg, Vector3.up) * fwd * dist;
     static void Log(string msg) => Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} womandog {msg}");
 }

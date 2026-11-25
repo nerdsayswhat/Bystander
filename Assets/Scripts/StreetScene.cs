@@ -90,8 +90,9 @@ public partial class StreetScene : MonoBehaviour
         if (ring != null) { mpb.SetColor(BaseColor, Color.white * 2.5f * k); ring.SetPropertyBlock(mpb); }
         crowdMat.SetColor(BaseColor, Color.white * 10f * k); babyMat.SetColor(BaseColor, Color.white * 10f * k);
         if (chainedMat != null) chainedMat.SetColor(BaseColor, Color.white * 10f * k);
-        UpdatePolice(k); StreetSound(k, dt);
+        UpdatePolice(k); StreetSound(k, dt); UpdatePop(dt);
         foreach (var f in figs) if (f != null) f.brightness = f == oldManFig && keep ? kf : f == ladyFig && keep ? kw : keptFigs.Contains(f) ? 1f : k;
+        UpdateCleanup();
         foreach (var r in fruit) { mpb.SetColor(BaseColor, new Color(0.9f * 1.6f, 0.3f * 1.6f, 0.04f * 1.6f, 1f) * kf); r.SetPropertyBlock(mpb); }
         if (womanFig != null && womanFig.Skeleton != null)                                 // the scared woman crosses the street, in place and moved along
         {
@@ -114,7 +115,7 @@ public partial class StreetScene : MonoBehaviour
         t = 0f; rise = 0f;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized; right = Vector3.Cross(Vector3.up, fwd);
         origin = new Vector3(head.position.x, 0f, head.position.z); baseY = -viewHeight;
-        lv.Clear(); li.Clear(); blds.Clear(); keptFigs.Clear(); benchSpots.Clear(); queue.Clear(); peds.Clear(); sv.Clear(); si.Clear(); asm.Clear(); figDelay.Clear(); growing = true; assembling = false; hueN = 0; hue0 = Random.value; mpb = new MaterialPropertyBlock(); figs.Clear(); fruit.Clear(); womanFig = null; walkX = 0f;
+        lv.Clear(); li.Clear(); blds.Clear(); keptFigs.Clear(); benchSpots.Clear(); queue.Clear(); peds.Clear(); sv.Clear(); si.Clear(); asm.Clear(); chainPeople.Clear(); chainAsm = null; popP = null; popT = -1f; popDone = false; nearFreed = null; litS0 = litS1 = 0; cleanT = -1f; cleanDone = false; cleanFigs.Clear(); figDelay.Clear(); growing = true; assembling = false; hueN = 0; hue0 = Random.value; mpb = new MaterialPropertyBlock(); figs.Clear(); fruit.Clear(); womanFig = null; walkX = 0f;
         root = new GameObject("Street"); root.SetActive(false);
         var rnd = new System.Random(21);                                                    // the same street in both scenes
         yield return BuildCity(rnd);
@@ -558,9 +559,11 @@ public partial class StreetScene : MonoBehaviour
             for (int jj = -3; jj <= 3; jj++)
             {
                 if (ii == 0 && jj == 0) continue;
-                var ic = P(28f * ii, 0f, 28f * jj); float dd = new Vector2(ic.x - origin.x, ic.z - origin.z).magnitude; if (dd < 14f || dd > 105f || (cleanNear && dd < nearClean)) continue;   // none within the cleared area when the player acted
+                var ic = P(28f * ii, 0f, 28f * jj); float dd = new Vector2(ic.x - origin.x, ic.z - origin.z).magnitude; if (dd < 14f || dd > 105f || Freed(ii, jj, dd)) continue;   // none round a freed person (within the cleared area, or one of the unchained ones further out) when the player acted
                 if (Over()) { yield return null; sw.Restart(); }
+                int ls0 = lv.Count / 2;
                 for (int i = 0; i < 22; i++) { float a = (float)prnd.NextDouble() * Mathf.PI * 2f, r = i < 14 ? 0.7f + (float)prnd.NextDouble() * 2.8f : 3.5f + (float)prnd.NextDouble() * 3.5f; Litter(ic + (right * Mathf.Cos(a) + fwd * Mathf.Sin(a)) * r, (float)prnd.NextDouble(), 1.8f); }
+                if (NearFree(ii, jj, dd)) { litS0 = ls0; litS1 = lv.Count / 2; }                   // the line segments of this person's trash, shrunk away later
             }
         // bicycle lying on the ground at (-3.5, 6): two wheels flat on the ground, a frame between them
         var bc = P(-3.5f, 0.05f, 6f);
@@ -633,7 +636,7 @@ public partial class StreetScene : MonoBehaviour
     // The sources are children of the street root, so they sink with the street.
     readonly List<Sfx.Handle> crowdHs = new List<Sfx.Handle>(), panicHs = new List<Sfx.Handle>(), sirenHs = new List<Sfx.Handle>();
     readonly List<Vector3> policeAt = new List<Vector3>();
-    float nextHorn = 4f, nextGroan = 9f, nextPunch = 3f, punchGap, sirenClock; int punchLeft; public float sirenOn = 10f;
+    float nextHorn = 4f, nextGroan = 9f, nextPunch = 3f, punchGap, sirenClock; int punchLeft; public float sirenOn = 10f, cleanProblemSound = 0.25f; readonly float[] sirenEnv = new float[8];
     Vector3 Around(float d, float h = 1f) { float a = Random.value * Mathf.PI * 2f; return root.transform.TransformPoint(P(Mathf.Cos(a) * d, h, Mathf.Sin(a) * d)); }
     void Ring(List<Sfx.Handle> list, string clip, int n, float radius, float maxDist, float minDist)
     {
@@ -653,37 +656,31 @@ public partial class StreetScene : MonoBehaviour
         if (crowdHs.Count == 0)
         {
             Ring(crowdHs, "street_crowd", 6, 30f, 70f, 12f); Ring(panicHs, "street_panic", 4, 45f, 90f, 18f);
-            // author 2026-11-25: only 3 sirens, in three different parts of the city (the first police point, then the one farthest from it, then the one farthest from both), and they sound one at a time (see below)
-            var pick = new List<Vector3>(); if (policeAt.Count > 0) pick.Add(policeAt[0]);
-            while (pick.Count < 3 && pick.Count < policeAt.Count)
-            {
-                Vector3 best = pick[0]; float bd = -1f;
-                foreach (var p in policeAt) { float m = float.MaxValue; foreach (var q in pick) m = Mathf.Min(m, (p - q).sqrMagnitude); if (m > bd) { bd = m; best = p; } }
-                pick.Add(best);
-            }
-            foreach (var p in pick) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
+            // author 2026-11-25: exactly as many sirens as police light spots (3, at least 60 m apart so they sit in different parts of the city), one siren per spot, sounding one at a time (see below);
+            // the spot's lights flash only while its siren sounds (sirenEnv)
+            foreach (var p in policeAt) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
             sirenClock = 0f;
         }
         sirenClock += dt;
         foreach (var h in crowdHs) h.Volume = 0.35f * k;
-        foreach (var h in panicHs) h.Volume = (cleanNear ? 0.22f : scene6 ? 0.4f : 0.28f) * 0.5f * k;   // acted: 0.22, a little under scene 3 (0.28); all halved on 2026-11-25 (author: tone down the screaming)
+        foreach (var h in panicHs) h.Volume = (cleanNear ? 0.22f : scene6 ? 0.4f : 0.28f) * 0.5f * (cleanNear ? cleanProblemSound : 1f) * k;   // acted: 0.22, a little under scene 3 (0.28); all halved on 2026-11-25 (author: tone down the screaming)
         for (int i = 0; i < sirenHs.Count; i++)   // one siren at a time: each one is on for sirenOn s (1.5 s fades), then 2 s of quiet, then the next one in another part of the city; acted: 80 percent of scene 3
         {
             float cyc = sirenOn + 2f, ph = (sirenClock - i * cyc) % (cyc * sirenHs.Count); if (ph < 0f) ph += cyc * sirenHs.Count;
             float env = ph < sirenOn ? Mathf.Clamp01(ph / 1.5f) * Mathf.Clamp01((sirenOn - ph) / 1.5f) : 0f;
-            sirenHs[i].Volume = (cleanNear ? 0.56f : 0.7f) * k * env;
+            sirenHs[i].Volume = (cleanNear ? 0.56f : 0.7f) * k * env; if (i < sirenEnv.Length) sirenEnv[i] = env;
         }
         if ((nextHorn -= dt) <= 0f) { nextHorn = Random.Range(5f, 12f); Sfx.Play("car_horn", Around(Random.Range(25f, 45f)), 0.7f * k, true, 90f, 6f); }
-        if ((nextGroan -= dt) <= 0f) { nextGroan = Random.Range(10f, 20f); Sfx.Play("groan", Around(Random.Range(12f, 25f)), 0.5f * k, true, 50f, 2f); }
+        if ((nextGroan -= dt) <= 0f) { nextGroan = Random.Range(10f, 20f); Sfx.Play("groan", Around(Random.Range(12f, 25f)), 0.5f * (cleanNear ? cleanProblemSound : 1f) * k, true, 50f, 2f); }
         if ((nextPunch -= dt) <= 0f) { nextPunch = Random.Range(1.2f, 3f); punchLeft = Random.Range(1, 4); }
-        if (punchLeft > 0 && (punchGap -= dt) <= 0f) { punchLeft--; punchGap = Random.Range(0.12f, 0.3f); Sfx.Play("punch", Around(Random.Range(8f, 40f)), 0.9f * k, true, 70f, 3f); }
+        if (punchLeft > 0 && (punchGap -= dt) <= 0f) { punchLeft--; punchGap = Random.Range(0.12f, 0.3f); Sfx.Play("punch", Around(Random.Range(8f, 40f)), 0.9f * (cleanNear ? cleanProblemSound : 1f) * k, true, 70f, 3f); }
     }
-    void StopStreetSound() { foreach (var h in crowdHs) h.Stop(); foreach (var h in panicHs) h.Stop(); foreach (var h in sirenHs) h.Stop(); crowdHs.Clear(); panicHs.Clear(); sirenHs.Clear(); nextHorn = 4f; nextGroan = 9f; nextPunch = 3f; punchLeft = 0; }
+    void StopStreetSound() { foreach (var h in crowdHs) h.Stop(); foreach (var h in panicHs) h.Stop(); foreach (var h in sirenHs) h.Stop(); crowdHs.Clear(); panicHs.Clear(); sirenHs.Clear(); System.Array.Clear(sirenEnv, 0, sirenEnv.Length); nextHorn = 4f; nextGroan = 9f; nextPunch = 3f; punchLeft = 0; }
 
     // the bystanders: still columns (a head and a body of 36 particles) in clusters on the roads, and the baby in the stroller
     // author 2026-11-24: red and blue police lights, as if the cars were behind buildings. The cars are never drawn: only a few strobing cores (hard little lights, as if seen
     // through gaps and over roofs) and large soft halos around them, washing the facades and the air above the roofs. Red and blue alternate, each spot at its own phase.
-    public int policeSpots = 8; public float policeFlash = 0.5f;
+    public int policeCount = 3; public float policeFlash = 0.5f;
     ParticleSystem policePs; ParticleSystem.Particle[] policeParts; Material policeMat; int[] policeSpot; bool[] policeBlue, policeCore; float[] policeBase; float[] policePhase; static Texture2D softTex;
     static Texture2D Soft()
     {
@@ -711,14 +708,14 @@ public partial class StreetScene : MonoBehaviour
     void BuildPolice()
     {
         var prnd = new System.Random(303); var spots = new List<Vector3>(); var roadDirs = new List<Vector3>(); var roadPts = new List<Vector3>();
-        for (int tries = 0; spots.Count < policeSpots && tries < 800; tries++)
+        for (int tries = 0; spots.Count < (cleanNear ? 1 : policeCount) && tries < 800; tries++)
         {
             // author 2026-11-24: strictly between the buildings, never on the streets next to the player: the middle of a block (buildings all round), and not in the blocks
             // beside the four streets that run in front of, behind, left and right of the player (those are within 28 m of their axes)
             int bi = prnd.Next(-4, 4), bj = prnd.Next(-4, 4); var c = P(28f * bi + 14f, 0f, 28f * bj + 14f);
             var rel = c - new Vector3(origin.x, c.y, origin.z); float lx = Mathf.Abs(Vector3.Dot(rel, right)), lz = Mathf.Abs(Vector3.Dot(rel, fwd));
             float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 60f || d > 110f || Mathf.Min(lx, lz) < 28f) continue;
-            bool close = false; foreach (var q in spots) if ((q - c).sqrMagnitude < 1225f) close = true;
+            bool close = false; foreach (var q in spots) if ((q - c).sqrMagnitude < 3600f) close = true;
             if (!close) { bool ax = prnd.NextDouble() < 0.5; var rdir = ax ? right : fwd; var pdir = ax ? fwd : right; spots.Add(c); roadDirs.Add(rdir); roadPts.Add(c + pdir * (prnd.NextDouble() < 0.5 ? 14f : -14f)); }   // the road that runs along one side of the block
         }
         policeAt.Clear(); policeAt.AddRange(spots);                                   // the sirens sit at these points
@@ -769,7 +766,7 @@ public partial class StreetScene : MonoBehaviour
             float x = (tm + policePhase[i]) % 1f, xc = (x + (policeBlue[i] ? 0.5f : 0f)) % 1f;
             float on = xc < 0.5f ? 1f : 0f;   // a true strobe: red is on for half the cycle and blue the other half, switching instantly with no fade (author 2026-11-24)
             on = 0.06f + 0.94f * on;
-            float v = on * policeBase[i];
+            float v = on * policeBase[i] * (policeSpot[i] < sirenEnv.Length ? sirenEnv[policeSpot[i]] : 0f);   // flashes only while its own siren sounds
             policeParts[i].startColor = policeBlue[i] ? new Color(0.12f, 0.3f, 1f, v) : new Color(1f, 0.05f, 0.04f, v);   // additive: rgb x alpha x the soft texture
         }
         policePs.SetParticles(policeParts, policeParts.Length);
@@ -862,7 +859,7 @@ public partial class StreetScene : MonoBehaviour
             var dg = new GameObject("Dog"); dg.transform.SetParent(root.transform, true); dg.transform.position = dp; dg.transform.rotation = Quaternion.LookRotation(-toDog);
             dog = dg.AddComponent<ParticleDog>(); dog.brightness = 0f; dog.barking = true;
             var ball = new GameObject("WhiteBone", typeof(MeshFilter), typeof(MeshRenderer)); ball.GetComponent<MeshFilter>().sharedMesh = WomanDogScene.Bone(); ball.transform.SetParent(root.transform, true);   // author 2026-11-25: a white bone instead of the green ball
-            ball.transform.position = (lp + dp) * 0.5f + Vector3.up * (keep ? 0.02f : 0.04f); ball.transform.rotation = Quaternion.Euler(0f, 40f, 0f); ball.transform.localScale = Vector3.one * (keep ? 0.16f : 0.32f);
+            ball.transform.position = keep ? Ground(WomanDogScene.PlacedBone) + Vector3.up * 0.02f : (lp + dp) * 0.5f + Vector3.up * 0.04f; ball.transform.rotation = Quaternion.Euler(0f, 40f, 0f); ball.transform.localScale = Vector3.one * (keep ? 0.16f : 0.32f);
             ballR2 = ball.GetComponent<Renderer>(); ballR2.sharedMaterial = Resources.Load<Material>("OrangeSphere"); ballR2.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; ballR2.receiveShadows = false;
         }
         BuildPeople();
@@ -898,6 +895,77 @@ public partial class StreetScene : MonoBehaviour
     }
     void KeepFig(ParticleFigure f) { keptFigs.Add(f); figDelay[figs.IndexOf(f)] = -100f; f.gather = 1f; }     // present at once: no assembling, full brightness
     float prevNear = 0.01f; bool cleanNear, keep; Renderer[] bagRs2; float[] bagKs2;   // keep: scene 2's old man, can, bin, woman and dog stay exactly where scene 2 put them
+    // author 2026-11-25: when the player breaks their chains in scene 3, the chained person at the nearest intersection (the one most in front of them) breaks free at the same moment:
+    // the person's chain particles burst outwards and shrink over 1.2 s
+    class CP { public Vector3 c; public int start, count; public float d; }
+    readonly List<CP> chainPeople = new List<CP>(); Asm chainAsm; CP popP; float popT = -1f; bool popDone; Vector3[] popV;
+    void UpdatePop(float dt)
+    {
+        if (chainAsm == null || seq == null || head == null) return;
+        if (popP == null)
+        {
+            CP best = null;
+            if (scene6)                                                    // the clean street: the freed neighbour's chains burst once the street has drawn itself, then its area cleans up
+            {
+                if (nearFreed == null || t < cleanStart || growing || assembling) return;
+                best = nearFreed; cleanT = 0f; CollectCleanFigs(best.c);
+            }
+            else
+            {
+                if (!seq.ChainsBrokenByPlayer || chainPeople.Count == 0) return;
+                var fw = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized; float bs = float.MaxValue;
+                foreach (var c in chainPeople) { var to = new Vector3(c.c.x - origin.x, 0f, c.c.z - origin.z); float sc = c.d + (1f - Vector3.Dot(to.normalized, fw)) * 12f; if (sc < bs) { bs = sc; best = c; } }
+            }
+            popP = best; popT = 0f; popDone = false; popV = new Vector3[best.count];
+            for (int i = 0; i < best.count; i++) { var o = chainAsm.tgt[best.start + i] - best.c; o.y = 0f; popV[i] = (o.normalized * 2.5f + (Vector3)Random.insideUnitSphere * 1.5f) * Random.Range(0.6f, 1.4f); }
+            Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} street the chains are broken: the person at the nearest intersection ({best.d:0} m away) breaks free too");
+        }
+        if (popDone && !assembling) return;
+        popT += dt; float life = 1.2f, u = Mathf.Clamp01(popT / life);
+        for (int i = 0; i < popP.count; i++)
+        {
+            int ix = popP.start + i;
+            chainAsm.arr[ix].position = chainAsm.tgt[ix] + popV[i] * Mathf.Min(popT, life) * (1f - 0.35f * u);
+            chainAsm.arr[ix].startSize = chainAsm.size[ix] * (1f - u);
+        }
+        chainAsm.ps.SetParticles(chainAsm.arr, chainAsm.arr.Length);
+        if (popT >= life) popDone = true;
+    }
+    // the figures lying or standing round the freed person (not the person), faded out with the trash
+    void CollectCleanFigs(Vector3 c)
+    {
+        cleanFigs.Clear();
+        foreach (var f in figs)
+        {
+            if (f == null) continue;
+            var p = f.position; float dd = new Vector2(p.x - c.x, p.z - c.z).magnitude;
+            if (dd > 0.8f && dd < 8f) cleanFigs.Add(f);
+        }
+        Debug.Log($"BYSTANDER EVENT t={Time.time:0.00} street the freed neighbour's chains burst; its area cleans up ({litS1 - litS0} trash line segments, {cleanFigs.Count} figures)");
+    }
+    // the slow fade: the trash lines shrink to nothing and the figures round the person dim, over cleanFade s
+    bool cleanDone;
+    void UpdateCleanup()
+    {
+        if (cleanT < 0f || cleanDone) return;
+        cleanT += Time.deltaTime; float u = Mathf.Clamp01(cleanT / Mathf.Max(cleanFade, 0.1f)); u = u * u * (3f - 2f * u);
+        for (int s = litS0; s < litS1; s++)
+        {
+            var m = (origV[2 * s] + origV[2 * s + 1]) * 0.5f;
+            curV[2 * s] = Vector3.Lerp(origV[2 * s], m, u); curV[2 * s + 1] = Vector3.Lerp(origV[2 * s + 1], m, u);
+        }
+        streetMesh.vertices = curV;
+        foreach (var f in cleanFigs) if (f != null) f.brightness *= 1f - u;
+        if (u >= 1f) { cleanDone = true; foreach (var f in cleanFigs) if (f != null) f.gameObject.SetActive(false); }
+    }
+    // an intersection person who is free (no chains, a clean area round them) when the street is clean: everyone within nearClean m and one in three of the others (a fixed pattern by grid position)
+    // author 2026-11-25: of the four intersections right next to the player (about 28 m) only ONE is freed (the one straight ahead, grid 0,1); the others keep their chains. Further out, one in three.
+    bool Freed(int ii, int jj, float d) => cleanNear && d >= 30f && Mathf.Abs(ii * 2 + jj) % 3 == 0;
+    // author 2026-11-25: the one freed neighbour is built chained with trash round it like the others, then (cleanStart s into scene 6, when the street has drawn itself) its chains burst
+    // and its trash and anything else lying round it fade away slowly over cleanFade s
+    bool NearFree(int ii, int jj, float d) => cleanNear && d < 30f && ii == 0 && jj == 1;
+    public float cleanStart = 9f, cleanFade = 8f;
+    CP nearFreed; int litS0, litS1; float cleanT = -1f; readonly List<ParticleFigure> cleanFigs = new List<ParticleFigure>();
     Vector3 Ground(Vector3 w, float y = 0f) => new Vector3(w.x, baseY + y, w.z); const float nearClean = 25f;
     readonly List<Vector3[]> benchSpots = new List<Vector3[]>();
     readonly List<Spec> queue = new List<Spec>(); readonly List<Ped> peds = new List<Ped>();
@@ -1017,7 +1085,8 @@ public partial class StreetScene : MonoBehaviour
                     var c = P(28f * ii, 0f, 28f * jj); float d = new Vector2(c.x - origin.x, c.z - origin.z).magnitude; if (d < 14f || d > 105f) continue;
                     var f = Quaternion.Euler(0f, (float)crn.NextDouble() * 360f, 0f) * Vector3.forward; var rt = Vector3.Cross(Vector3.up, f);
                     queue.Add(new Spec { clip = idle, pos = c, dir = f, speed = 0f, count = 260 });
-                    if (((ii + jj) & 1) == 0 && d < 85f && !(cleanNear && d < nearClean))        // author 2026-11-24: a problem close to every second chained person: someone beaten down with a kneeling helper, a fight, or a stabbing
+                    bool freed = Freed(ii, jj, d);                                                    // author 2026-11-25: when the street is clean (the player helped) the people within the cleared area and one in three of the rest are NOT chained and have no litter or problem beside them
+                    if (((ii + jj) & 1) == 0 && d < 85f && !freed)        // author 2026-11-24: a problem close to every second chained person: someone beaten down with a kneeling helper, a fight, or a stabbing
                     {
                         float pa = (float)crn.NextDouble() * Mathf.PI * 2f, yw = (float)crn.NextDouble() * Mathf.PI * 2f; var po = c + (right * Mathf.Cos(pa) + fwd * Mathf.Sin(pa)) * 4f;
                         var ax = right * Mathf.Cos(yw) + fwd * Mathf.Sin(yw); int pt = Mathf.Abs(ii * 3 + jj) % 3;
@@ -1025,12 +1094,15 @@ public partial class StreetScene : MonoBehaviour
                         else if (pt == 1 && punchClips != null && punchClips.Length > 0 && hitClips != null && hitClips.Length > 0) { queue.Add(new Spec { clip = punchClips[crn.Next(punchClips.Length)], pos = po - ax * 0.55f, dir = ax, speed = 0f, count = 220 }); queue.Add(new Spec { clip = hitClips[crn.Next(hitClips.Length)], pos = po + ax * 0.55f, dir = -ax, speed = 0f, count = 220 }); }
                         else if (stabbed != null) { queue.Add(new Spec { clip = stabbed, pos = po, yaw = yw * Mathf.Rad2Deg, count = 220 }); queue.Add(new Spec { clip = idle, pos = po + ax * 1.3f, yaw = yw * Mathf.Rad2Deg + 180f, count = 220 }); }
                     }
+                    if (freed) continue;                                                           // unchained: no links
+                    int cs0 = cp.Count;
                     Vector3 Ch(float x, float y, float z) => c + rt * x + Vector3.up * y + f * z;
                     for (int k = 0; k < 36; k++) { float u = k / 36f, a = u * 3f * 2f * Mathf.PI; cp.Add(Ch(Mathf.Cos(a) * 0.21f, 1.32f - u * 0.4f, Mathf.Sin(a) * 0.17f)); cc.Add(new Color(0.16f, 0.16f, 0.16f, 1f)); cs.Add(0.055f); }   // round the chest, three turns
                     for (int side = -1; side <= 1; side += 2)
                         for (int k = 0; k < 7; k++) { float u = k / 6f; cp.Add(Ch(side * Mathf.Lerp(0.2f, 0.24f, u), Mathf.Lerp(1.0f, 0.8f, u) - 0.05f * Mathf.Sin(u * Mathf.PI), Mathf.Lerp(0.0f, 0.12f, u))); cc.Add(new Color(0.16f, 0.16f, 0.16f, 1f)); cs.Add(0.05f); }   // belt to wrist, with a sag
+                    chainPeople.Add(new CP { c = c, start = cs0, count = cp.Count - cs0, d = d }); if (NearFree(ii, jj, d)) nearFreed = chainPeople[chainPeople.Count - 1];
                 }
-            if (cp.Count > 0) chainedR = MakeSystem("ChainedPeople", cp, cc, cs, out chainedMat);
+            if (cp.Count > 0) { chainedR = MakeSystem("ChainedPeople", cp, cc, cs, out chainedMat); chainAsm = asm[asm.Count - 1]; }
         }
         queue.Sort((x, y) => QDist(y).CompareTo(QDist(x)));                                  // nearest last: they are made first
     }
