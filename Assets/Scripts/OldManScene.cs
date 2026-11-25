@@ -34,7 +34,7 @@ public class OldManScene : MonoBehaviour
     public float footLeft = 22f, footDist = 0.5f;           // the orange at the player's feet
     public float toesLeft = 8f, toesDist = 0.6f;             // and one closer still, almost at the toes
     public float receiveHoldAt = 0.5f;                      // 0..1: how far into the receive clip he gets (hand out) before he waits for the orange
-    public float giveReach = 0.55f;                          // metres along the floor: let go this close to the old man (and below head height) and he reaches out and takes it
+    public float giveRadius = 0.8f, giveHandRadius = 0.55f;   // author 2026-11-25, a bit bigger (renamed from giveReach 0.55, the saved scene held it): let go within giveRadius m of him along the floor (below head height) OR within giveHandRadius m of his hand and he reaches out and takes it
     public float scene5Start = 0f;                          // scene 5: extra darkness before he falls (author 2026-11-20: scene 2 timings, a little faster; his own 3 s of darkness remains)
     public float afterGive = 6f, freedTimeout = 60f;        // seconds from the orange being taken, or from the break with nothing given, to the cards
 
@@ -47,7 +47,7 @@ public class OldManScene : MonoBehaviour
     {
         public Transform tr; public Renderer r; public HandGrabInteractable grab; public Vector3 start, rest, giveFrom;
         public float delay, dur, k, lit, giveT, vy;
-        public bool given, falling, arrived; public int holder = -1; public Transform hand;
+        public bool given, falling, arrived; public int holder = -1; public Transform hand, knuckle;
     }
 
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -80,7 +80,7 @@ public class OldManScene : MonoBehaviour
             case Phase.Dark:
                 if (t >= (scene5 ? scene5Start : 0f) + fallDelay)
                 {
-                    figure.playing = true; fallAt = t; phase = Phase.Falling; Sfx.Play("oldman_fall", oldManPos + Vector3.up * 0.2f);
+                    figure.playing = true; fallAt = t; phase = Phase.Falling; Sfx.Play("oldman_fall", oldManPos + Vector3.up * 0.1f, 1f, true, 40f, 1f, spillDelay);   // author 2026-11-25: a thud (no voice), landing when his body and the bag reach the floor
                     Log("old man falls");
                 }
                 break;
@@ -95,7 +95,7 @@ public class OldManScene : MonoBehaviour
                 }
                 if (dismiss != null && !dismissed && !freed && ((dwell >= dismissAfterLook && t >= fallAt + 6f) || t >= fallAt + dismissLatest))
                 {
-                    figure.Play(dismiss, false); phase = Phase.Dismissed; dismissedAt = t; Sfx.Play("oldman_dont_bother", MouthPos(), 0.55f, true, 25f, 1.5f, 3.2f);   // quieter, and 3.2 s after the wave starts (author 2026-11-24); from his head, directional
+                    figure.Play(dismiss, false); phase = Phase.Dismissed; dismissedAt = t; Subtitles.Say("oldman_dont_bother", "Don't bother.", 3.2f); Sfx.Play("oldman_dont_bother", MouthPos(), 0.55f, true, 25f, 1.5f, 3.2f);   // quieter, and 3.2 s after the wave starts (author 2026-11-24); from his head, directional
                     Log($"old man dismisses ({t - fallAt:0.0}s after the fall, looked {dwell:0.0}s)");
                 }
                 break;
@@ -233,15 +233,15 @@ public class OldManScene : MonoBehaviour
                 if (!o.arrived)
                 {
                     o.giveT += dt / 0.4f;
-                    o.tr.position = Vector3.Lerp(o.giveFrom, o.hand.position, Mathf.SmoothStep(0f, 1f, o.giveT));
+                    o.tr.position = Vector3.Lerp(o.giveFrom, Palm(o.hand, o.knuckle), Mathf.SmoothStep(0f, 1f, o.giveT));
                     if (o.giveT >= 1f)
                     {
-                        o.arrived = true; givenAt = t; Sfx.Play("oldman_thanks", MouthPos(), 0.9f, true, 25f, 1.5f);
+                        o.arrived = true; givenAt = t; Subtitles.Say("oldman_thanks", "Thank you.", 0f); Sfx.Play("oldman_thanks", MouthPos(), 0.9f, true, 25f, 1.5f);
                         figure.playing = true;                      // the rest of the receive clip: he takes it
                         Log($"{o.tr.name} touches his hand: he takes it");
                     }
                 }
-                else o.tr.position = o.hand.position;
+                else o.tr.position = Palm(o.hand, o.knuckle);
             }
         }
         // author 2026-11-23: no jump to the cards from here any more. After the chains break the other beats of scene 2 still play (the can, then the dog); the cards come
@@ -268,13 +268,22 @@ public class OldManScene : MonoBehaviour
         {
             o.holder = -1; held--;
             float far = Flat(o.tr.position - oldManPos).magnitude;
-            if (!given && far < giveReach && o.tr.position.y < 1.5f) Give(o);
+            if (!given && o.tr.position.y < 1.5f && (far < giveRadius || NearHand(o.tr.position))) Give(o);
             else
             {
                 if (offering && !given && held == 0 && figure != null) { offering = false; figure.Play(reach, true); }   // nothing handed over: back to gathering oranges
-                o.falling = true; o.vy = 0f; Log($"{o.tr.name} dropped {far:0.00} m from him at {o.tr.position.y:0.00} m high (he takes it within {giveReach:0.0} m)");
+                o.falling = true; o.vy = 0f; Log($"{o.tr.name} dropped {far:0.00} m from him at {o.tr.position.y:0.00} m high (he takes it within {giveRadius:0.0} m of him or {giveHandRadius:0.0} m of a hand)");
             }
         }
+    }
+
+    // the middle of the palm: half way from the wrist bone to the knuckle of the middle finger (the hand bone itself is the wrist)
+    static Vector3 Palm(Transform hand, Transform knuckle) => hand == null ? Vector3.zero : knuckle != null ? Vector3.Lerp(hand.position, knuckle.position, 0.5f) : hand.position;
+    bool NearHand(Vector3 p)
+    {
+        if (figure == null) return false;
+        var l = figure.Bone(HumanBodyBones.LeftHand); var r = figure.Bone(HumanBodyBones.RightHand);
+        return l != null && Vector3.Distance(Palm(l, figure.Bone(HumanBodyBones.LeftMiddleProximal)), p) < giveHandRadius || r != null && Vector3.Distance(Palm(r, figure.Bone(HumanBodyBones.RightMiddleProximal)), p) < giveHandRadius;
     }
 
     void Give(Orange o)
@@ -290,6 +299,7 @@ public class OldManScene : MonoBehaviour
             figure.playing = false;                         // he holds the pose he is in until the orange touches his hand
             var l = figure.Bone(HumanBodyBones.LeftHand); var r = figure.Bone(HumanBodyBones.RightHand);
             o.hand = l == null ? r : r == null ? l : Vector3.Distance(l.position, o.giveFrom) < Vector3.Distance(r.position, o.giveFrom) ? l : r;
+            o.knuckle = o.hand == l ? figure.Bone(HumanBodyBones.LeftMiddleProximal) : figure.Bone(HumanBodyBones.RightMiddleProximal);   // the orange goes to the palm, not the wrist
         }
         Log($"{o.tr.name} offered to the old man at {y:0.00} m ({(clip != null ? clip.name : "no receive clip")} plays when it touches his hand)");
     }

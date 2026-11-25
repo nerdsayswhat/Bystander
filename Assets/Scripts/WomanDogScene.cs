@@ -24,17 +24,33 @@ public class WomanDogScene : MonoBehaviour
     public float womanTweak = 0f;                           // fine-tune: extra turn in degrees on top of "right hand towards the dog" (negative = anticlockwise seen from above); renamed value kept 0
     public float ballSize = 0.04f, ballRest = 0.04f, litFull = 35f, litFade = 75f;
     public Color woman = new Color(0.06f, 0.012f, 0.16f);   // x emission 10 = (0.6, 0.12, 1.6): purple, blue clips to full so it stays purple
-    public Color ball = new Color(0.05f, 0.9f, 0.1f);       // x ballEmission: green
+    public Color boneColor = Color.white;                    // x ballEmission: white (renamed from `ball`, the saved scene held the green)
+    public float boneLength = 0.16f;                         // m, the bone's whole length
+    static Mesh boneMesh;
+    // a bone along the X axis, about 1 unit long: a shaft and two knobs at each end (built from the primitive meshes, cached)
+    public static Mesh Bone()
+    {
+        if (boneMesh != null) return boneMesh;
+        var tmp = new[] { GameObject.CreatePrimitive(PrimitiveType.Capsule), GameObject.CreatePrimitive(PrimitiveType.Sphere) };
+        Mesh cap = tmp[0].GetComponent<MeshFilter>().sharedMesh, sph = tmp[1].GetComponent<MeshFilter>().sharedMesh;
+        Destroy(tmp[0]); Destroy(tmp[1]);
+        var ci = new System.Collections.Generic.List<CombineInstance> { new CombineInstance { mesh = cap, transform = Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 0f, 90f), new Vector3(0.16f, 0.35f, 0.16f)) } };
+        foreach (float x in new[] { -0.38f, 0.38f }) foreach (float z in new[] { -0.07f, 0.07f })
+            ci.Add(new CombineInstance { mesh = sph, transform = Matrix4x4.TRS(new Vector3(x, 0f, z), Quaternion.identity, Vector3.one * 0.2f) });
+        boneMesh = new Mesh { name = "Bone" }; boneMesh.CombineMeshes(ci.ToArray(), true, true);
+        return boneMesh;
+    }
     public float ballEmission = 1.6f;
     public float walkSpeed = 0.7f;                          // m/s while she walks away
-    public float afterCalm = 9f;                            // seconds from the ball being grabbed to the cards
+    public float afterBin = 5f;                             // s from the can going into the bin to the woman and the dog appearing (author 2026-11-25)
+    public float afterCalm = 9f;                           // seconds from the ball being grabbed to the cards
 
     enum Phase { Idle, Waiting, Shown }
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
     SceneSequencer seq; ChainWrap chain; Transform head; Phase phase;
     float diag, diagTick; Sfx.Handle breath, steps; ParticleFigure womanFig; ParticleDog dog; Transform ballTr; Renderer ballR; HandGrabInteractable grab;
     Vector3 origin, fwd, womanPos, dogPos, awayDir, ballPos; MaterialPropertyBlock mpb;
-    float stride, t, findTimer, womanLit, dogLit, ballLit, vy, calmedAt; bool scene5, held, falling, calmed, walking, toCards, warned;
+    float stride, t, findTimer, womanLit, dogLit, ballLit, vy, calmedAt, thankedAt, thanksLen, binnedAt = -1f; bool scene5, held, falling, calmed, walking, toCards, warned, thanked;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Spawn()
@@ -62,7 +78,8 @@ public class WomanDogScene : MonoBehaviour
         if (phase == Phase.Idle) return;
 
         t += dt;
-        if (phase == Phase.Waiting && t >= (SceneSequencer.TestBeat3Only ? 3f : scene5 ? scene5At : beat3At)) Appear();
+        if (phase == Phase.Waiting && binnedAt < 0f && seq.binnedCan) binnedAt = t;      // author 2026-11-25: the can went in the bin: the woman and the dog come 5 s later (if that is sooner than the usual time)
+        if (phase == Phase.Waiting && t >= Mathf.Min(SceneSequencer.TestBeat3Only ? 3f : scene5 ? scene5At : beat3At, binnedAt >= 0f ? binnedAt + afterBin : float.MaxValue)) Appear();
         if (phase != Phase.Shown) return;
 
         if (!calmed && ((chain != null && chain.Broken) || scene5)) grab.enabled = true;          // the hands are free: the ball can be grabbed
@@ -73,24 +90,38 @@ public class WomanDogScene : MonoBehaviour
             if (p.y <= ballSize + Accessibility.Lift) { p.y = ballSize + Accessibility.Lift; falling = false; }
             ballTr.position = p;
         }
+        seq.hold = calmed && !toCards;                                         // the step does not time out while the dog comes and the woman says thank you
         if (calmed)
         {
-            if (!walking && womanFig.ClipTime >= getUp.length - 0.05f && walkAway != null)
-            {
-                womanFig.Play(walkAway, true); walking = true; steps = Sfx.Loop("woman_footsteps", womanPos + Vector3.up * 0.1f, 0.8f); stride = walkAway.averageSpeed.magnitude; if (stride < 0.1f) stride = walkSpeed; Log($"the woman walks away at {stride:0.00} m/s (clip speed {walkAway.averageSpeed.magnitude:0.00}, length {walkAway.length:0.0}s)");
-            }
-            if (walking) { womanFig.Skeleton.position += awayDir * stride * dt; if (steps != null && steps.alive) steps.Position = womanFig.Skeleton.position; }
-            if (dog != null)                                                     // the dog comes running to the player and stops about 0.6 m away, with a small hop in his stride
+            bool arrived = dog == null;
+            if (dog != null)                                                     // the dog comes running to the player first, with a small hop in his stride
             {
                 var me = new Vector3(head.position.x, 0f, head.position.z);
                 var from = dog.transform.position; from.y = 0f;
                 var stop = me + (from - me).normalized * dogStop;
                 bool running = (stop - from).sqrMagnitude > 0.0025f;
+                arrived = !running;
                 var np = Vector3.MoveTowards(from, stop, dogRun * dt);
                 np.y = running ? 0.04f * Mathf.Abs(Mathf.Sin(t * 16f)) : 0f;
                 dog.transform.position = np;
             }
-            if (!scene5 && !toCards && t >= calmedAt + afterCalm) { toCards = true; Log("the dog is calm and the woman has gone: to the cards"); seq.GoToCards(); }
+            if (!thanked && (arrived || t >= calmedAt + 8f))                     // author 2026-11-25: only once the dog has reached the player does the woman get up and say thank you
+            {
+                thanked = true; thankedAt = t; womanFig.Play(getUp, false);
+                var wh = womanFig.Bone(HumanBodyBones.Head); Subtitles.Say("woman_thanks", "Thank you.", 0f); Sfx.Play("woman_thanks", wh != null ? wh.position : womanPos + Vector3.up * 1.4f, 0.9f, true, 25f, 1.5f);   // from her head, directional
+                var tc = Resources.Load<AudioClip>("Audio/woman_thanks"); thanksLen = tc != null ? tc.length : 3f;
+                Log($"the dog has come to you: the woman thanks you (voice {thanksLen:0.0} s), the next scene follows 5 s after she has said it");
+            }
+            if (thanked && !walking && womanFig.ClipTime >= getUp.length - 0.05f && walkAway != null)
+            {
+                womanFig.Play(walkAway, true); walking = true; steps = Sfx.Loop("woman_footsteps", womanPos + Vector3.up * 0.1f, 0.8f); stride = walkAway.averageSpeed.magnitude; if (stride < 0.1f) stride = walkSpeed; Log($"the woman walks away at {stride:0.00} m/s (clip speed {walkAway.averageSpeed.magnitude:0.00}, length {walkAway.length:0.0}s)");
+            }
+            if (walking) { womanFig.Skeleton.position += awayDir * stride * dt; if (steps != null && steps.alive) steps.Position = womanFig.Skeleton.position; }
+            if (!toCards && thanked && t >= thankedAt + thanksLen + 5f)         // 5 s after she has said it: scene 2 goes to the cards, scene 5 to scene 6
+            {
+                toCards = true; Log(scene5 ? "the woman has said thank you: on to scene 6" : "the woman has said thank you: to the cards");
+                if (scene5) seq.Next(); else seq.GoToCards();
+            }
         }
         // lit only where the player looks; once calmed they stay lit so the ball is not alone in the dark
         womanLit = Mathf.MoveTowards(womanLit, calmed ? 1f : Lit(womanPos + Vector3.up * 0.9f), 3f * dt);
@@ -98,7 +129,7 @@ public class WomanDogScene : MonoBehaviour
         womanFig.brightness = womanLit; dog.brightness = dogLit;
         ballLit = Mathf.MoveTowards(ballLit, 1f, 3f * dt);   // always lit once it appears: it was gaze-lit, and with the woman and dog 3.6 m out the ball at your feet was outside the lit cone (author: no ball near me)
         ballR.enabled = ballLit > 0.01f;
-        mpb.SetColor(BaseColor, new Color(ball.r * ballEmission * ballLit, ball.g * ballEmission * ballLit, ball.b * ballEmission * ballLit, 1f));
+        mpb.SetColor(BaseColor, new Color(boneColor.r * ballEmission * ballLit, boneColor.g * ballEmission * ballLit, boneColor.b * ballEmission * ballLit, 1f));
         ballR.SetPropertyBlock(mpb);
         if (diag > 0f && (diagTick -= dt) <= 0f)                                    // for 20 s after the ball appears, once a second: is it really drawn, and where is it compared with the gaze (so a log answers "is the ball there")
         {
@@ -116,7 +147,7 @@ public class WomanDogScene : MonoBehaviour
             return;
         }
         scene5 = seq.steps[seq.Index].name.StartsWith("5");
-        t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = false; HasYaw = false;
+        t = 0f; womanLit = dogLit = ballLit = 0f; held = falling = calmed = walking = toCards = thanked = false; HasYaw = false; binnedAt = -1f;
         fwd = Vector3.ProjectOnPlane(head.forward, Vector3.up).normalized;
         origin = new Vector3(head.position.x, 0f, head.position.z);
         womanPos = At(womanAt, womanFar);
@@ -143,16 +174,16 @@ public class WomanDogScene : MonoBehaviour
         dog.brightness = 0f; dog.barking = false;
 
         var mat = Resources.Load<Material>("OrangeSphere");
-        var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        var s = new GameObject("WhiteBone", typeof(MeshFilter), typeof(MeshRenderer));   // author 2026-11-25: the green ball is now a white bone (the field names still say ball)
         s.SetActive(false);                                                      // components are added while inactive so the SDK injections land before Awake and Start
-        s.name = "GreenBall";
-        s.transform.localScale = Vector3.one * ballSize * 2f;
-
-        s.transform.position = ballPos + Vector3.up * (ballRest + Accessibility.Lift);
+        s.GetComponent<MeshFilter>().sharedMesh = Bone();
+        s.transform.localScale = Vector3.one * boneLength;
+        s.transform.rotation = Quaternion.Euler(0f, 40f, 0f);
+        s.transform.position = ballPos + Vector3.up * (0.02f + Accessibility.Lift);
         ballTr = s.transform; ballR = s.GetComponent<Renderer>();
         Prepare(ballR, mat);
         s.AddComponent<BreakTarget>();
-        s.GetComponent<SphereCollider>().radius = 1.8f;                         // about 0.08 m: easy to catch
+        s.AddComponent<SphereCollider>().radius = 0.8f;                         // about 0.13 m: easy to catch
         var rb = s.AddComponent<Rigidbody>(); rb.isKinematic = true; rb.useGravity = false;
         var g = s.AddComponent<Grabbable>(); g.InjectOptionalRigidbody(rb); g.InjectOptionalThrowWhenUnselected(false);
         grab = s.AddComponent<HandGrabInteractable>();
@@ -172,7 +203,7 @@ public class WomanDogScene : MonoBehaviour
         var sk = womanFig.Skeleton;
         sk.RotateAround(womanFig.Bone(HumanBodyBones.Hips).position, Vector3.up, Vector3.SignedAngle(Vector3.ProjectOnPlane(sk.forward, Vector3.up), face, Vector3.up) + womanTweak);
         awayDir = face; PlacedYaw = sk.eulerAngles.y; HasYaw = true;            // she walks the way she faces; the street copies this exact turn
-        womanFig.playing = true; dog.barking = true; Sfx.Play("woman_scream", womanPos + Vector3.up * 1.3f); breath = Sfx.Loop("woman_breath", womanPos + Vector3.up * 0.5f, 0.7f); ballTr.gameObject.SetActive(true);   // she screams as the beat starts and the recording runs on (no dialogue yet); the ball appears with her
+        womanFig.playing = true; dog.barking = true; Sfx.Play("woman_scream", womanPos + Vector3.up * 1.3f); breath =Sfx.Loop("woman_breath", womanPos + Vector3.up * 0.5f, 0.7f); ballTr.gameObject.SetActive(true);   // she screams as the beat starts (full volume, the author kept it); the bone appears with her
         phase = Phase.Shown;
         Log("a woman cowers from a barking dog on the right, a ball lies on the floor in front of you");
         diag = 20f; diagTick = 0f;
@@ -187,8 +218,7 @@ public class WomanDogScene : MonoBehaviour
             if (!calmed)                                                         // the dog goes quiet the moment the ball is in the player's hand
             {
                 calmed = true; calmedAt = t; breath?.Stop(); Sfx.Play("ball_pickup", ballTr.position); Sfx.Play("dog_whine", dogPos + Vector3.up * 0.3f); dog.barking = false; dog.lookAt = head; seq.calmedDog = true;
-                womanFig.Play(getUp, false); { var wh = womanFig.Bone(HumanBodyBones.Head); Sfx.Play("woman_thanks", wh != null ? wh.position : womanPos + Vector3.up * 1.4f, 0.9f, true, 25f, 1.5f); }   // from her head, directional
-                Log("ball grabbed: the dog goes quiet, the woman gets up");
+                Log("bone grabbed: the dog goes quiet and comes to you; the woman gets up when he arrives");
             }
         }
         else if ((type == PointerEventType.Unselect || type == PointerEventType.Cancel) && held)
@@ -214,7 +244,7 @@ public class WomanDogScene : MonoBehaviour
         if (womanFig != null) { if (toStreet) HandOver = womanFig; else Destroy(womanFig.gameObject); }
         if (dog != null) Destroy(dog.gameObject);
         if (ballTr != null) Destroy(ballTr.gameObject);
-        if (seq != null) seq.deferBreak = false;
+        if (seq != null) { seq.deferBreak = false; seq.hold = false; }
         womanFig = null; dog = null; ballTr = null; phase = Phase.Idle; t = 0f;
         Log("scene 2 beat 3 ends");
     }

@@ -23,7 +23,7 @@ public partial class StreetScene : MonoBehaviour
     public float riseTime = 6f;                             // seconds the street takes to light up ("darkness starts lifting")
     public int columns = 90; public int strollerCount = 25, standerCount = 60;   // strollerCount: ordinary walkers, was walkerCount 130 (author 2026-11-24: the street did not feel menacing; renamed because Scene 2.unity holds the old value)                            // still columns (36 particles each)
     public float lineBright = 0.9f;
-    public float fadeIn = 2.5f, liftDelay = 3f, riseSeconds = 16f;   // s: the lines fade in; the rise above the street starts after liftDelay and lasts riseSeconds
+    public float fadeIn = 2.5f, liftDelay = 3f, riseSeconds = 16f, riseSeconds6 = 12f;   // scene 6 rises in 12 s (author 2026-11-25);   // s: the lines fade in; the rise above the street starts after liftDelay and lasts riseSeconds
     public Color people = new Color(0.004f, 0.05f, 0.16f);  // x emission 10: the same azure as the particle figures
     public Color helper = new Color(0.004f, 0.05f, 0.16f); static readonly Color oldBlue = new Color(0.004f, 0.05f, 0.16f);   // the old man keeps the azure he has in scene 2
     public Color woman = new Color(0.06f, 0.012f, 0.16f);   // the same purple as the woman of scene 2
@@ -71,7 +71,7 @@ public partial class StreetScene : MonoBehaviour
         rise = Mathf.Clamp01(t / Mathf.Max(fadeIn, 0.1f));                                // the darkness lifts
         float k = rise * rise * (3f - 2f * rise);
         // the scene starts on the street (the world is raised by viewHeight); the near buildings grow, then the world sinks and the player rises above the street
-        float lf = Mathf.Clamp01((t - liftDelay) / Mathf.Max(riseSeconds, 0.1f)); lf = lf * lf * (3f - 2f * lf);
+        float lf = Mathf.Clamp01((t - liftDelay) / Mathf.Max(scene6 ? riseSeconds6 : riseSeconds, 0.1f)); lf = lf * lf * (3f - 2f * lf);
         float drop = viewHeight * (1f - lf);
         root.transform.position = new Vector3(0f, drop, 0f);
         if (adoptLady) AdoptLady();
@@ -84,7 +84,7 @@ public partial class StreetScene : MonoBehaviour
         float kf = keep ? Mathf.Lerp(OldManScene.PlacedBright, 1f, ez) : k, kw = keep ? Mathf.Lerp(WomanDogScene.PlacedBright, 1f, ez) : k;
         if (dog != null) dog.brightness = kw;
         if (bagRs2 != null) for (int i = 0; i < bagRs2.Length; i++) { mpb.SetColor(BaseColor, new Color(OldManScene.BagTan.r, OldManScene.BagTan.g, OldManScene.BagTan.b, 1f) * 1.1f * bagKs2[i] * kf); bagRs2[i].SetPropertyBlock(mpb); }
-        if (ballR2 != null) { mpb.SetColor(BaseColor, new Color(0.08f, 1.4f, 0.16f, 1f) * kw); ballR2.SetPropertyBlock(mpb); }
+        if (ballR2 != null) { mpb.SetColor(BaseColor, new Color(1.4f, 1.4f, 1.4f, 1f) * kw); ballR2.SetPropertyBlock(mpb); }
         SpawnPeople(); MovePeds(dt);
         mpb.SetColor(BaseColor, Color.white * lineBright * k); lines.SetPropertyBlock(mpb);
         if (ring != null) { mpb.SetColor(BaseColor, Color.white * 2.5f * k); ring.SetPropertyBlock(mpb); }
@@ -633,7 +633,7 @@ public partial class StreetScene : MonoBehaviour
     // The sources are children of the street root, so they sink with the street.
     readonly List<Sfx.Handle> crowdHs = new List<Sfx.Handle>(), panicHs = new List<Sfx.Handle>(), sirenHs = new List<Sfx.Handle>();
     readonly List<Vector3> policeAt = new List<Vector3>();
-    float nextHorn = 4f, nextGroan = 9f, nextPunch = 3f, punchGap; int punchLeft;
+    float nextHorn = 4f, nextGroan = 9f, nextPunch = 3f, punchGap, sirenClock; int punchLeft; public float sirenOn = 10f;
     Vector3 Around(float d, float h = 1f) { float a = Random.value * Mathf.PI * 2f; return root.transform.TransformPoint(P(Mathf.Cos(a) * d, h, Mathf.Sin(a) * d)); }
     void Ring(List<Sfx.Handle> list, string clip, int n, float radius, float maxDist, float minDist)
     {
@@ -653,11 +653,26 @@ public partial class StreetScene : MonoBehaviour
         if (crowdHs.Count == 0)
         {
             Ring(crowdHs, "street_crowd", 6, 30f, 70f, 12f); Ring(panicHs, "street_panic", 4, 45f, 90f, 18f);
-            foreach (var p in policeAt) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
+            // author 2026-11-25: only 3 sirens, in three different parts of the city (the first police point, then the one farthest from it, then the one farthest from both), and they sound one at a time (see below)
+            var pick = new List<Vector3>(); if (policeAt.Count > 0) pick.Add(policeAt[0]);
+            while (pick.Count < 3 && pick.Count < policeAt.Count)
+            {
+                Vector3 best = pick[0]; float bd = -1f;
+                foreach (var p in policeAt) { float m = float.MaxValue; foreach (var q in pick) m = Mathf.Min(m, (p - q).sqrMagnitude); if (m > bd) { bd = m; best = p; } }
+                pick.Add(best);
+            }
+            foreach (var p in pick) { var h = Sfx.Loop("siren_loop", root.transform.TransformPoint(p + Vector3.up * 3f), 0f, true, 160f, 10f); h.Seek(Random.value); h.Attach(root.transform); sirenHs.Add(h); }
+            sirenClock = 0f;
         }
+        sirenClock += dt;
         foreach (var h in crowdHs) h.Volume = 0.35f * k;
-        foreach (var h in panicHs) h.Volume = (cleanNear ? 0.22f : scene6 ? 0.4f : 0.28f) * k;   // acted: 0.22, a little under scene 3 (0.28)
-        foreach (var h in sirenHs) h.Volume = (cleanNear ? 0.56f : 0.7f) * k;   // acted: 80 percent of scene 3
+        foreach (var h in panicHs) h.Volume = (cleanNear ? 0.22f : scene6 ? 0.4f : 0.28f) * 0.5f * k;   // acted: 0.22, a little under scene 3 (0.28); all halved on 2026-11-25 (author: tone down the screaming)
+        for (int i = 0; i < sirenHs.Count; i++)   // one siren at a time: each one is on for sirenOn s (1.5 s fades), then 2 s of quiet, then the next one in another part of the city; acted: 80 percent of scene 3
+        {
+            float cyc = sirenOn + 2f, ph = (sirenClock - i * cyc) % (cyc * sirenHs.Count); if (ph < 0f) ph += cyc * sirenHs.Count;
+            float env = ph < sirenOn ? Mathf.Clamp01(ph / 1.5f) * Mathf.Clamp01((sirenOn - ph) / 1.5f) : 0f;
+            sirenHs[i].Volume = (cleanNear ? 0.56f : 0.7f) * k * env;
+        }
         if ((nextHorn -= dt) <= 0f) { nextHorn = Random.Range(5f, 12f); Sfx.Play("car_horn", Around(Random.Range(25f, 45f)), 0.7f * k, true, 90f, 6f); }
         if ((nextGroan -= dt) <= 0f) { nextGroan = Random.Range(10f, 20f); Sfx.Play("groan", Around(Random.Range(12f, 25f)), 0.5f * k, true, 50f, 2f); }
         if ((nextPunch -= dt) <= 0f) { nextPunch = Random.Range(1.2f, 3f); punchLeft = Random.Range(1, 4); }
@@ -846,8 +861,8 @@ public partial class StreetScene : MonoBehaviour
             }
             var dg = new GameObject("Dog"); dg.transform.SetParent(root.transform, true); dg.transform.position = dp; dg.transform.rotation = Quaternion.LookRotation(-toDog);
             dog = dg.AddComponent<ParticleDog>(); dog.brightness = 0f; dog.barking = true;
-            var ball = GameObject.CreatePrimitive(PrimitiveType.Sphere); Destroy(ball.GetComponent<Collider>()); ball.transform.SetParent(root.transform, true);
-            ball.transform.position = (lp + dp) * 0.5f + Vector3.up * (keep ? 0.04f : 0.08f); ball.transform.localScale = Vector3.one * (keep ? 0.08f : 0.16f);
+            var ball = new GameObject("WhiteBone", typeof(MeshFilter), typeof(MeshRenderer)); ball.GetComponent<MeshFilter>().sharedMesh = WomanDogScene.Bone(); ball.transform.SetParent(root.transform, true);   // author 2026-11-25: a white bone instead of the green ball
+            ball.transform.position = (lp + dp) * 0.5f + Vector3.up * (keep ? 0.02f : 0.04f); ball.transform.rotation = Quaternion.Euler(0f, 40f, 0f); ball.transform.localScale = Vector3.one * (keep ? 0.16f : 0.32f);
             ballR2 = ball.GetComponent<Renderer>(); ballR2.sharedMaterial = Resources.Load<Material>("OrangeSphere"); ballR2.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; ballR2.receiveShadows = false;
         }
         BuildPeople();

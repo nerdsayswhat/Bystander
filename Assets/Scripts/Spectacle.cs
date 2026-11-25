@@ -138,7 +138,7 @@ public class Spectacle : MonoBehaviour
         string n = seq.steps[seq.Index].name;
         if (string.IsNullOrEmpty(n)) return false;
         if (n[0] == '1') return Time.time - stepStart >= scene1Delay;   // beat 1 (the chains, silence) comes first
-        return n[0] == '2' || n[0] == '3' || n[0] == '6';
+        return n[0] == '2';   // author 2026-11-25: no fireworks in the city scenes (3 and 6)
     }
 
     void Gaze(float dt)
