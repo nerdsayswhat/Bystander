@@ -128,3 +128,16 @@ Technician_Notes.pdf
 
 # Office lock files (Word makes these while a doc is open)
 ~$*
+
+# Not needed to build the APK (kept on disk, not published)
+/SoundReview/
+/Branding/
+/ParkedStreet/
+/.claude/
+/HANDOFF.md
+/scratch_reqs.json
+/reqs_only.json
+/.vsconfig
+# Original sound/dialogue files; the build uses the processed copies in Assets/Resources/Audio
+/Assets/Audio/
+/Assets/Audio.meta
